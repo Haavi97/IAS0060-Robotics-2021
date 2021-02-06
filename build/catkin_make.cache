@@ -1,0 +1,2 @@
+basiashvili_cervera
+-DCATKIN_DEVEL_PREFIX=/home/baska/Apps/ROS/catkin_ws/devel -DCMAKE_INSTALL_PREFIX=/home/baska/Apps/ROS/catkin_ws/install -G Unix Makefiles

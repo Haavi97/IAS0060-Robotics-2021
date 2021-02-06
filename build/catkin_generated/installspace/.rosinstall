@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/baska/Apps/ROS/catkin_ws/install/setup.sh

@@ -1,0 +1,8 @@
+prefix=/home/baska/Apps/ROS/catkin_ws/devel
+
+Name: basiashvili_cervera
+Description: Description of basiashvili_cervera
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: geometry_msgs nav_msgs roscpp rospy message_runtime
