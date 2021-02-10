@@ -36,7 +36,6 @@ def listener():
 if __name__ == '__main__':
     try:
         talker()
+        listener()
     except rospy.ROSInterruptException:
         pass
-
-    listener()
