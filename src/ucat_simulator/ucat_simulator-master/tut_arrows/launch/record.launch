@@ -1,0 +1,15 @@
+<!-- Launch file just for recording data to bag files,
+     replace launch file and recorded topics according to your preferences. -->
+
+<launch>
+	<include file="$(find tut_arrows_drivers)/launch/drivers.launch"/>
+<!-- 	<include file="$(find uwsim_arrows)/launch/uwsim.launch"/>  -->
+	
+	<node name="rosbag" pkg="rosbag" type="record" 
+		args="-o $(find tut_arrows)/output/ 
+			/ucat0/hw/sonar/b /ucat0/hw/sonar/fd /ucat0/hw/sonar/ff /ucat0/hw/sonar/fl /ucat0/hw/sonar/fr /ucat0/hw/sonar/fu /ucat0/hw/sonar/l /ucat0/hw/sonar/r 
+			/ucat0/hw/imu /ucat0/hw/pressure /ucat0/hw/water_temperature /ucat0/odom /ucat0/force_req /ucat0/hw/flippers_cmd
+			/ucat0/internal_temperature /ucat0/internal_humidity /ucat0/capacity_lost /ucat0/modem_range /ucat0/imu_temperature /ucat0/rpy /ucat0/trajectory"
+	/>
+	
+</launch>

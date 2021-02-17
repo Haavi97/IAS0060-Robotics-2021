@@ -1,0 +1,21 @@
+<launch>
+	<include file="$(find uwsim_arrows)/launch/uwsim.launch"/> 
+	
+	<group ns="ucat0">
+		<node name="WrenchDriver" pkg="tut_arrows" type="WrenchDriver" output="screen" respawn="true">
+			<param name="mode" value="FAST"/>
+			<param name="mode_change_time" value="5.0"/>
+			 
+		</node>
+		
+		<node name="ObjectTracking" pkg="tut_arrows" type="TrackingSim.py" output="screen" respawn="true">
+		</node>
+		
+		
+		<node name="QuatToEulerNode" pkg="tut_arrows" type="QuatToEulerNode.py" output="screen" respawn="true">
+		</node>
+
+	</group>
+	
+	
+</launch>

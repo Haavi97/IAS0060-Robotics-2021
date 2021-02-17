@@ -1,0 +1,24 @@
+<launch>
+	<include file="$(find tut_arrows_drivers)/launch/drivers.launch"/>
+	
+	<group ns="ucat0">
+
+		<!--
+		<node name="WrenchToAcousticMsg" pkg="tut_arrows" type="WrenchToAcousticMsg" output="screen" respawn="true">
+			<remap from="receive_buffer" to="APPLICON_INBOX" />
+			<param name="scale_x" value="20.0" />
+			<param name="scale_y" value="20.0" />
+			<param name="scale_z" value="20.0" />
+			<param name="scale_yaw" value="5.0" />
+		</node>
+		-->
+		
+		<node name="WrenchDriver" pkg="tut_arrows" type="WrenchDriver" output="screen" respawn="true">
+			<param name="mode" value="SLOW" />
+		</node>
+
+	</group>
+	
+	<node name="rosbag" pkg="rosbag" type="record" args="/ucat0/hw/sonar/b /ucat0/hw/sonar/fd /ucat0/hw/sonar/ff /ucat0/hw/sonar/fl /ucat0/hw/sonar/fr /ucat0/hw/sonar/fu /ucat0/hw/sonar/l /ucat0/hw/sonar/r /ucat0/hw/imu /ucat0/hw/pressure /ucat0/hw/water_temperature"/>
+	
+</launch>

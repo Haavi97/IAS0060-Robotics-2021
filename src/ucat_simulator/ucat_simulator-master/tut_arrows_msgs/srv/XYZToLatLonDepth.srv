@@ -1,0 +1,3 @@
+geometry_msgs/Vector3 xyz # x - positive forward, y - positive left, z - positive up
+---
+geometry_msgs/Vector3 lld # latitude, longitude, depth

@@ -1,0 +1,118 @@
+<launch>
+<!--	<include file="$(find tut_arrows_drivers)/launch/drivers.launch"/>-->
+ 	<include file="$(find uwsim_arrows)/launch/uwsim.launch"/>  
+	
+	<group ns="ucat0">
+		<node name="coordinate_converter" pkg="tut_arrows" type="coordinate_converter" output="screen" respawn="false">
+			<rosparam param="beacons">
+              "9600": {latitude: 59.226605, longitude: 24.233025, depth: 1.5}
+              "11250": {latitude: 59.226099, longitude: 24.232601, depth: 1.5}
+            </rosparam>
+            <rosparam param="input">
+              latitude: 59.226346
+              longitude: 24.233043
+              depth: 1.0
+            </rosparam>
+            <remap from="coordinates_input" to="/latlonalt" />
+            <remap from="gps_input" to="fix" />
+		</node>
+
+		<!--
+		<node name="gps_receiver" pkg="gpsd_client" type="gpsd_client" output="log" respawn="true">
+			<param name="host" value="arrows-getac1"/>
+		</node>
+		-->
+		<node name="WrenchDriver" pkg="tut_arrows" type="WrenchDriver" output="screen" respawn="true">
+			<param name="mode" value="SLOW" />
+		</node>
+		
+		<node name="TrajectoryManager" pkg="tut_arrows" type="TrajectoryManager" output="screen" respawn="true">
+			<param name="position_precision" value="0.1" />
+			<param name="orientation_precision" value="0.3" />
+			<param name="target_file" value="$(find tut_arrows)/data/targets2.txt" />
+			<param name="auto_start" value="True" />
+			<param name="startup_time" value="10.0" />
+			<param name="use_timed_targets" value="True" />
+		</node>
+
+		<node name="MainControl" pkg="tut_arrows" type="MainControl" output="screen" respawn="true">
+			<remap from="fluid_pressure" to="hw/pressure" />
+
+			<param name="rate" value="10" />
+			
+			<param name="mode" value="AUTO" />
+
+			<param name="force_wrench_mode" value="SLOW" />
+			
+			<param name="oa_enabled" value="False" />
+			<param name="min_oa_distance" value="0.2" />
+			<param name="oa_distance" value="2.0" />
+			<param name="oa_timeout" value="2.0" />
+
+			<param name="rate_of_change" value="1.0" />
+			
+<!--			<rosparam file="$(find tut_arrows)/data/x_controller.yaml" command="load" ns="x_controller" /> -->
+<!--			<rosparam file="$(find tut_arrows)/data/y_controller.yaml" command="load" ns="y_controller" /> -->
+			<rosparam file="$(find tut_arrows)/data/z_controller.yaml" command="load" ns="z_controller" />
+<!-- 			<rosparam file="$(find tut_arrows)/data/roll_controller.yaml" command="load" ns="roll_controller" /> -->
+<!--			<rosparam file="$(find tut_arrows)/data/pitch_controller.yaml" command="load" ns="pitch_controller" /> -->
+<!--			<rosparam file="$(find tut_arrows)/data/yaw_controller.yaml" command="load" ns="yaw_controller" /> -->
+<!--			<rosparam file="$(find tut_arrows)/data/SLOW/yaw_controller.yaml" command="load" ns="SLOW/yaw_controller" /> -->
+		</node>
+		
+		<node name="MotionEstimator" pkg="tut_arrows" type="MotionEstimator" output="screen" respawn="true">
+			<remap from="wrench" to="force_req" />
+			<remap from="imu" to="hw/imu" />
+			<remap from="fluid_pressure" to="hw/pressure" />
+			<remap from="beacon" to="hw/beaconReceiver" />
+			
+			<param name="rate" value="10" />
+			
+			<param name="mass" value="19" />
+			
+			<param name="force_x_coef" value="0.4" />
+			<param name="force_y_coef" value="0.4" />
+			<param name="torque_z_coef" value="0.8" />
+			
+			<param name="measurementVariance" value="0.4" />
+			<param name="rangeMeasurementVariance" value="1.0" />
+			<param name="likelihoodThreshold" value="0.2" />
+			<param name="doubleRangeMeasurementTimeout" value="30.0" />
+			
+			<param name="alfa1" value="1.0" />
+			<param name="alfa2" value="0.2" />
+			<param name="alfa3" value="0.2" />
+			<param name="alfa4" value="1.0" />
+		</node>
+		
+		<node name="WrenchToAcousticMsg" pkg="tut_arrows" type="WrenchToAcousticMsg" output="screen" respawn="true">
+			<remap from="receive_buffer" to="APPLICON_INBOX" />
+			<param name="scale_x" value="6.2" />
+			<param name="scale_y" value="3.6" />
+			<param name="scale_z" value="7.2" />
+			<param name="scale_roll" value="3.6" />
+			<param name="scale_pitch" value="3.6" />
+			<param name="scale_yaw" value="3.6" />
+		</node>
+	
+		<!--
+		<node name="ModemRangeDriver" pkg="tut_arrows" type="ModemRangeDriver" output="screen" respawn="true">
+			<param name="cmd_timeout" value="10.0" />
+			<rosparam param="modem_ids">[1, 3]</rosparam>
+		</node>
+		-->
+
+		<node name="QuatToEulerNode" pkg="tut_arrows" type="QuatToEulerNode.py" output="screen" respawn="true">
+		</node>
+
+	</group>
+	
+	<node name="rosbag" pkg="rosbag" type="record" 
+		args="-o $(find tut_arrows)/output/yaw_experiments/ 
+			/ucat0/hw/sonar/b /ucat0/hw/sonar/fd /ucat0/hw/sonar/ff /ucat0/hw/sonar/fl /ucat0/hw/sonar/fr /ucat0/hw/sonar/fu /ucat0/hw/sonar/l /ucat0/hw/sonar/r 
+			/ucat0/hw/imu /ucat0/hw/pressure /ucat0/hw/water_temperature /ucat0/odom /ucat0/force_req /ucat0/hw/flippers_cmd
+			/ucat0/internal_temperature /ucat0/internal_humidity /ucat0/capacity_lost /ucat0/modem_range /ucat0/imu_temperature /ucat0/rpy /ucat0/trajectory
+			/ucat0/hw/beaconReceiver"
+	/>
+	
+</launch>

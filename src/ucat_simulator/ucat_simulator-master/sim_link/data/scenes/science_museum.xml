@@ -1,0 +1,628 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE UWSimScene SYSTEM "UWSimScene.dtd" >
+
+<UWSimScene>
+	<oceanState>
+		<windx> 0.04 </windx>
+		<windy> 0.04 </windy>
+		<windSpeed> 12 </windSpeed>
+		<depth> 1000 </depth>
+		<reflectionDamping> 0.35 </reflectionDamping>
+		<waveScale> 0 </waveScale>
+		<isNotChoppy> 0 </isNotChoppy>
+		<choppyFactor> 0 </choppyFactor>
+		<crestFoamHeight> 0 </crestFoamHeight>
+		<oceanSurfaceHeight> 0 </oceanSurfaceHeight>
+		<fog>
+			<density> 0.1</density>
+			<color>
+				<r>0</r>
+				<g>0.05</g>
+				<b>0.3</b>
+			</color>
+		</fog>
+		<color>
+			<r>0.0</r>
+			<g>0.05</g>
+			<b>0.3</b>
+		</color>
+		<attenuation>
+			<r>0.015</r>
+			<g>0.0075 </g>
+			<b> 0.005 </b>
+		</attenuation>
+	</oceanState>
+	<simParams>
+		<disableShaders> 0 </disableShaders>
+		<resw> 1600 </resw>
+		<resh> 900 </resh>
+		<offsetp>
+			<x>0</x>
+			<y>0</y>
+			<z>0</z>
+		</offsetp>
+		<offsetr>
+			<x> 3.14</x>
+			<y> 0</y>
+			<z> -1.57 </z>
+		</offsetr>
+		<enablePhysics> 1 </enablePhysics>
+		<gravity>
+			<x> 0</x>
+			<y> 0</y>
+			<z> -9.81 </z>
+		</gravity>
+		<physicsFrequency>200</physicsFrequency>
+	</simParams>
+	<camera>
+		<freeMotion> 0 </freeMotion>
+		<objectToTrack>girona500/base_link</objectToTrack>
+		<fov> 60 </fov>
+		<aspectRatio> 1.33 </aspectRatio>
+		<near> 0.1 </near>
+		<far> 10000 </far>
+		<position>
+			<x>3 </x>
+			<y>0 </y>
+			<z>1 </z>
+		</position>
+		<lookAt>
+			<x>0</x>
+			<y>0 </y>
+			<z>0 </z>
+		</lookAt>
+	</camera>
+
+	<vehicle>
+		<name>girona500</name>
+		<file>data/robots/smallturtle.urdf</file>
+
+		<jointValues>
+			<joint> 0 </joint>
+			<joint> 0 </joint>
+			<joint> 0 </joint>
+			<joint> 0 </joint>
+		</jointValues>
+
+		<position>
+			<x> 0</x>
+			<y> 0 </y>
+			<z> 0.3 </z>
+		</position>
+		<orientation>
+			<r>0</r>
+			<p>0</p>
+			<y>0</y>
+		</orientation>
+
+		<imu>
+			<name>imu</name>
+			<relativeTo>base_link</relativeTo>
+			<position>
+				<x>0</x>
+				<y>0</y>
+				<z>0</z>
+			</position>
+			<orientation>
+				<r>0</r>
+				<p>0</p>
+				<y>0</y>
+			</orientation>
+			<std>0.00000001</std>
+		</imu>
+
+		<pressureSensor>
+			<name>pressureSensor</name>
+			<relativeTo>base_link</relativeTo>
+			<position>
+				<x>0.11</x>
+				<y>0</y>
+				<z>-0.05</z>
+			</position>
+			<orientation>
+				<r>0</r>
+				<p>0</p>
+				<y>0</y>
+			</orientation>
+			<std>0.02</std>
+		</pressureSensor>
+		<simulatedDevices>
+			<vehiclePhysics>
+				<name>girona500_physics</name>
+				<linkName>base_link_</linkName>
+				<physics>
+					<mass> 1 </mass>
+					<inertia>
+						<!-- https://en.wikipedia.org/wiki/List_of_moment_of_inertia_tensors-->
+						<!-- should be scaled, if gravity is not SI-standard (-9.8m/s^2) -->
+						<x> 0.00125 </x>
+						<y> 0.0050333333 </y>
+						<z> 0.0050333333 </z>
+					</inertia>
+					<collisionShapeType>compound box</collisionShapeType>
+					<linearDamping>0.05</linearDamping>
+					<angularDamping>0.05</angularDamping>
+					<isKinematic>0</isKinematic>
+				</physics>
+				<debugForceRatio>0</debugForceRatio>
+			</vehiclePhysics>
+
+			<vehicleMass>
+				<name>main_mass</name>
+				<relativeTo>base_link_</relativeTo>
+				<mass>1.496</mass>
+				<position>
+					<x> 0.0 </x>
+					<y> 0.0 </y>
+					<z> 0.005 </z>
+				</position>
+				<debugForceRatio>0.01</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 0 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleMass>
+
+			<vehicleBuoyance>
+				<name>floater</name>
+				<relativeTo>base_link_</relativeTo>
+				<radius>0.05</radius>
+				<mass>-0.755</mass>
+
+				<position>
+					<x> 0.05 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+				<position>
+					<x> -0.05 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+
+				<debugForceRatio>0.01</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 0 </g>
+					<b> 1 </b>
+				</color>
+			</vehicleBuoyance>
+
+			<vehicleDrag>
+				<name>drag_bodyB</name>
+				<relativeTo>base_link_</relativeTo>
+				<radius>0.05</radius>
+				<tranDrag>
+					<x> 0.0011775 </x><!-- 0.3 * (3.14 * 0.05^2) / 2-->
+					<y> 0.0144 </y><!-- 0.8 * (0.10 * 0.18) -->
+					<z> 0.0144 </z><!-- 0.8 * (0.10 * 0.18) -->
+				</tranDrag>
+				<maxForce>10000</maxForce>
+				<tranLift>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</tranLift>		
+				<position>
+					<x> -0.05 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+				<debugForceRatio>100</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+
+			<vehicleDrag>
+				<name>drag_bodyF</name>
+				<relativeTo>base_link_</relativeTo>
+				<radius>0.05</radius>
+				<tranDrag>
+					<x> 0.0011775 </x><!-- 0.3 * (3.14 * 0.05^2) / 2-->
+					<y> 0.0144 </y><!-- 0.8 * (0.10 * 0.18) -->
+					<z> 0.0144 </z><!-- 0.8 * (0.10 * 0.18) -->
+				</tranDrag>
+				<maxForce>10000</maxForce>
+				<tranLift>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</tranLift>		
+				<position>
+					<x> 0.05 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+				<debugForceRatio>100</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+			
+			<vehicleDrag>
+				<name>drag_bodyL</name>
+				<relativeTo>base_link_</relativeTo>
+				<radius>0.05</radius>
+				<tranDrag>
+					<x> 0.000 </x>
+					<!--0.15 * pi * 0.06^2 * 3 -->
+					<y> 0.0000 </y>
+					<!--0.9 * 0.10-->
+					<z> 0.0006 </z>
+					<!--0.9 * 0.12-->
+				</tranDrag>
+				<maxForce>1000</maxForce>
+				<tranLift>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</tranLift>		
+				<position>
+					<x> 0.00 </x>
+					<y> 0.05 </y>
+					<z> 0.0 </z>
+				</position>
+				<debugForceRatio>100</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+			
+			<vehicleDrag>
+				<name>drag_bodyR</name>
+				<relativeTo>base_link_</relativeTo>
+				<radius>0.05</radius>
+				<tranDrag>
+					<x> 0.000 </x>
+					<!--0.15 * pi * 0.06^2 * 3 -->
+					<y> 0.000 </y>
+					<!--0.9 * 0.10-->
+					<z> 0.0006 </z>
+					<!--0.9 * 0.12-->
+				</tranDrag>
+				<maxForce>1000</maxForce>
+				<tranLift>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</tranLift>		
+				<position>
+					<x> 0.00 </x>
+					<y> -0.05 </y>
+					<z> 0.0 </z>
+				</position>
+				<debugForceRatio>100</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+
+			<vehicleDrag>
+				<name>drag_frontrightflipper</name>
+				<relativeTo>frontrightflipper</relativeTo>
+				<radius>0.10</radius>
+				<tranDrag>
+					<x> 0.000001 </x>
+					<y> 0.000001 </y>
+					<z> 0.009315 </z>
+				</tranDrag>
+				<maxForce>20</maxForce>
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+			<vehicleDrag>
+				<name>drag_backrightflipper</name>
+				<relativeTo>backrightflipper</relativeTo>
+				<radius>0.10</radius>
+				<tranDrag>
+					<x> 0.000001 </x>
+					<y> 0.000001 </y>
+					<z> 0.009315 </z>
+				</tranDrag>
+				<maxForce>20</maxForce>
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+			<vehicleDrag>
+				<name>drag_backleftflipper</name>
+				<relativeTo>backleftflipper</relativeTo>
+				<radius>0.10</radius>
+				<tranDrag>
+					<x> 0.000001 </x>
+					<y> 0.000001 </y>
+					<z> 0.009315 </z>
+				</tranDrag>
+				<maxForce>20</maxForce>
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+			<vehicleDrag>
+				<name>drag_frontleftflipper</name>
+				<relativeTo>frontleftflipper</relativeTo>
+				<radius>0.10</radius>
+				<tranDrag>
+					<x> 0.000001 </x>
+					<y> 0.000001 </y>
+					<z> 0.009315 </z>
+				</tranDrag>
+				<maxForce>20</maxForce>
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 0 </r>
+					<g> 1 </g>
+					<b> 0 </b>
+				</color>
+			</vehicleDrag>
+			
+			<!--
+	 <vehicleDrag>
+		 <name>lift_body</name>
+		 <relativeTo>base_link_</relativeTo>
+		 <radius>0.45</radius>
+		 <tranDrag>
+			 <x> 0 </x>
+			 <y> 0 </y>
+			 <z> 0 </z>
+			 </tranDrag>
+			 <tranLift>
+				 <x> 0.0001</x>
+				 <y> 0.0001</y>
+				 <z> 0.0300</z>
+			 </tranLift>
+			 <rotDrag>
+				 <r> 0 </r>
+				 <p> 0 </p>
+				 <y> 0 </y>
+			 </rotDrag> 
+			 <debugForceRatio>1</debugForceRatio>
+			 <color>
+				 <r> 1 </r>
+				 <g> 1 </g>
+				 <b> 0 </b>
+			 </color>
+		 </vehicleDrag>
+		 -->
+			<vehicleThruster>
+				<name>thruster1</name>
+				<relativeTo>frontrightflipper</relativeTo>
+				<radius>0.04</radius>
+				<position>
+					<x> 0.0 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+				<defaultForce>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</defaultForce>
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 1 </r>
+					<g> 1 </g>
+					<b> 1 </b>
+				</color>
+			</vehicleThruster>
+			<vehicleThruster>
+				<name>thruster2</name>
+				<relativeTo>backrightflipper</relativeTo>
+				<radius>0.04</radius>
+				<position>
+					<x> 0.0 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+				<defaultForce>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</defaultForce>
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 1 </r>
+					<g> 1 </g>
+					<b> 1 </b>
+				</color>
+			</vehicleThruster>
+			<vehicleThruster>
+				<name>thruster3</name>
+				<relativeTo>backleftflipper</relativeTo>
+				<radius>0.04</radius>
+				<position>
+					<x> 0.0 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+				<defaultForce>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</defaultForce>
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 1 </r>
+					<g> 1 </g>
+					<b> 1 </b>
+				</color>
+			</vehicleThruster>
+			<vehicleThruster>
+				<name>thruster4</name>
+				<relativeTo>frontleftflipper</relativeTo>
+				<radius>0.04</radius>
+				<position>
+					<x> 0.0 </x>
+					<y> 0.0 </y>
+					<z> 0.0 </z>
+				</position>
+				<defaultForce>
+					<x> 0 </x>
+					<y> 0 </y>
+					<z> 0 </z>
+				</defaultForce>
+
+				<debugForceRatio>1</debugForceRatio>
+				<color>
+					<r> 1 </r>
+					<g> 1 </g>
+					<b> 1 </b>
+				</color>
+			</vehicleThruster>
+			<directionalReceiver>
+				<name>left_receiver</name>
+				<relativeTo> base_link_ </relativeTo>
+				<sensitiveTo>beacon1</sensitiveTo>
+				<sensitiveTo>beacon2</sensitiveTo>
+				<range>0.7</range>
+				<angle>1.57</angle>
+				<numberOfLines>3</numberOfLines>
+				<visible>0</visible>
+				<position>
+					<x> 0.1171 </x>
+					<y> -0.007 </y>
+					<z> 0 </z>
+				</position>
+				<orientation>
+					<r> 0 </r>
+					<p> -0.785 </p>
+					<y> -0.61 </y>
+				</orientation>
+			</directionalReceiver>
+			<directionalReceiver>
+				<name>right_receiver</name>
+				<relativeTo> base_link_ </relativeTo>
+				<sensitiveTo>beacon1</sensitiveTo>
+				<sensitiveTo>beacon2</sensitiveTo>
+				<range>0.7</range>
+				<angle>1.57</angle>
+				<numberOfLines>3</numberOfLines>
+				<visible>0</visible>
+				<position>
+					<x> 0.1171 </x>
+					<y> 0.007 </y>
+					<z> 0 </z>
+				</position>
+				<orientation>
+					<r> 0.785 </r>
+					<p> 0 </p>
+					<y> 0.95 </y>
+				</orientation>
+			</directionalReceiver>
+		</simulatedDevices>
+	</vehicle>
+
+	<object>
+		<name>beacon1</name>
+		<file>data/objects/redball.osgt</file>
+		<position>
+			<x> 0.7</x>
+			<y> 0.5 </y>
+			<z> 1.05 </z>
+		</position>
+		<orientation>
+			<r>0</r>
+			<p>0</p>
+			<y>0</y>
+		</orientation>
+		<physics>
+			<mass> 0 </mass>
+			<collisionShapeType> trimesh </collisionShapeType>
+			<isKinematic>1</isKinematic>
+		</physics>
+	</object>
+	
+	<object>
+		<name>tank</name>
+		<file>data/objects/2x2x1tank.osgt</file>
+		<position>
+			<x> 0</x>
+			<y> 0 </y>
+			<z> 0.45 </z>
+		</position>
+		<orientation>
+			<r>3.14</r>
+			<p>0</p>
+			<y>0</y>
+		</orientation>
+		<physics>
+			<mass> 0 </mass>
+			<collisionShapeType> trimesh </collisionShapeType>
+			<isKinematic>1</isKinematic>
+		</physics>
+	</object>
+
+	<rosInterfaces>
+		<ROSOdomToPAT>
+			<topic> /dataNavigator </topic>
+			<vehicleName> girona500 </vehicleName>
+			<visualize> 1 </visualize>
+		</ROSOdomToPAT>
+		<ArmToROSJointState>
+			<topic>/uwsim/joint_state</topic>
+			<vehicleName> girona500 </vehicleName>
+		</ArmToROSJointState>
+		<ROSJointStateToArm>
+			<topic>/uwsim/joint_state_command</topic>
+			<vehicleName> girona500 </vehicleName>
+		</ROSJointStateToArm>
+		<ROSPoseToPAT>
+			<topic> /g500/pose</topic>
+			<vehicleName> girona500 </vehicleName>
+		</ROSPoseToPAT>
+		<ImuToROSImu>
+			<name>imu</name>
+			<topic>g500/imu</topic>
+			<rate>20</rate>
+		</ImuToROSImu>
+		<PressureSensorToROS>
+			<name>pressureSensor</name>
+			<topic>g500/pressure</topic>
+			<rate>5</rate>
+		</PressureSensorToROS>
+		<SimulatedDeviceROS>
+			<vehicleThrusterROS>
+				<vehicleName> girona500 </vehicleName>
+				<topic>g500/thrusters_cmd</topic>
+				<infoTopic>g500/thrusters</infoTopic>
+				<rate>10</rate>
+			</vehicleThrusterROS>
+		</SimulatedDeviceROS>
+		<SimulatedDeviceROS>
+			<directionalReceiverROS>
+				<name> left_receiver </name>
+				<topic>g500/leftReceiver</topic>
+				<rate>5</rate>
+			</directionalReceiverROS>
+		</SimulatedDeviceROS>
+		<SimulatedDeviceROS>
+			<directionalReceiverROS>
+				<name> right_receiver </name>
+				<topic>g500/rightReceiver</topic>
+				<rate>5</rate>
+			</directionalReceiverROS>
+		</SimulatedDeviceROS>
+	</rosInterfaces>
+</UWSimScene>
+

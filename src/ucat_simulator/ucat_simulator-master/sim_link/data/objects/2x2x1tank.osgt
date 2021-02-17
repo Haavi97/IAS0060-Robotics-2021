@@ -1,0 +1,267 @@
+#Ascii Scene
+#Version 92
+#Generator osgexport 0.13.0
+
+osg::Group {
+  UniqueID 68
+  Name "Root"
+  Children 1 {
+    osg::MatrixTransform {
+      UniqueID 46
+      Name "Cube"
+      Children 1 {
+        osg::Geode {
+          UniqueID 67
+          Name "GeodeCube"
+          Drawables 1 {
+            osg::Geometry {
+              UniqueID 48
+              Name "Cube"
+              StateSet TRUE {
+                osg::StateSet {
+                  UniqueID 49
+                  Name "Material"
+                  DataVariance DYNAMIC
+                  UserDataContainer TRUE {
+                    osg::DefaultUserDataContainer {
+                      UniqueID 65
+                      UDC_UserObjects 1 {
+                        osg::StringValueObject {
+                          UniqueID 66
+                          Name "source"
+                          Value "blender"
+                        }
+                      }
+                    }
+                  }
+                  ModeList 1 {
+                    GL_BLEND ON
+                  }
+                  AttributeList 1 {
+                    osg::Material {
+                      UniqueID 50
+                      Name "Material"
+                      DataVariance DYNAMIC
+                      UserDataContainer TRUE {
+                        osg::DefaultUserDataContainer {
+                          UniqueID 51
+                          UDC_UserObjects 13 {
+                            osg::StringValueObject {
+                              UniqueID 52
+                              Name "source"
+                              Value "blender"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 53
+                              Name "DiffuseIntensity"
+                              Value "0.800000011920929"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 54
+                              Name "DiffuseColor"
+                              Value "[ 0.800000, 0.800000, 0.800000 ]"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 55
+                              Name "SpecularIntensity"
+                              Value "0.5"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 56
+                              Name "SpecularColor"
+                              Value "[ 1.000000, 1.000000, 1.000000 ]"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 57
+                              Name "SpecularHardness"
+                              Value "50"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 58
+                              Name "Emit"
+                              Value "0.0"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 59
+                              Name "Ambient"
+                              Value "1.0"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 60
+                              Name "Translucency"
+                              Value "0.0"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 61
+                              Name "DiffuseShader"
+                              Value "LAMBERT"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 62
+                              Name "SpecularShader"
+                              Value "COOKTORR"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 63
+                              Name "Transparency"
+                              Value "true"
+                            }
+                            osg::StringValueObject {
+                              UniqueID 64
+                              Name "TransparencyMethod"
+                              Value "Z_TRANSPARENCY"
+                            }
+                          }
+                        }
+                      }
+                      Ambient TRUE Front 0.00000 0.00000 0.00000 1.00000 Back 0.00000 0.00000 0.00000 1.00000
+                      Diffuse TRUE Front 0.64000 0.64000 0.64000 0.09900 Back 0.64000 0.64000 0.64000 0.99900
+                      Specular TRUE Front 0.50000 0.50000 0.50000 1.00000 Back 0.50000 0.50000 0.50000 1.00000
+                      Emission TRUE Front 0.00000 0.00000 0.00000 1.00000 Back 0.00000 0.00000 0.00000 1.00000
+                      Shininess TRUE Front 12.50000 Back 12.50000
+                    }
+                    Value OFF
+                  }
+                }
+              }
+              PrimitiveSetList 1 {
+                  DrawElementsUInt GL_QUADS 56 {
+                    0 1 2 3 
+                    4 5 6 7 
+                    8 9 4 7 
+                    10 11 9 8 
+                    5 11 10 6 
+                    12 13 14 15 
+                    16 17 18 19 
+                    20 21 22 23 
+                    24 25 26 27 
+                    28 29 30 31 
+                    32 33 34 35 
+                    36 37 38 39 
+                    40 41 42 43 
+                    44 45 46 47 
+                  }
+              }
+              VertexData {
+                Array TRUE ArrayID 4 Vec3fArray 48 {
+                  1.00000 -1.00000 -1.00000
+                  -1.00000 -1.00000 -1.00000
+                  -1.00000 1.00000 -1.00000
+                  1.00000 1.00000 -1.00000
+                  1.00000 1.00000 1.00000
+                  -1.00000 1.00000 1.00000
+                  -0.99500 0.99500 1.00000
+                  0.99500 0.99500 1.00000
+                  0.99500 -0.99500 1.00000
+                  1.00000 -1.00000 1.00000
+                  -0.99500 -0.99500 1.00000
+                  -1.00000 -1.00000 1.00000
+                  1.00000 -1.00000 -1.00000
+                  1.00000 1.00000 -1.00000
+                  1.00000 1.00000 1.00000
+                  1.00000 -1.00000 1.00000
+                  -1.00000 -1.00000 -1.00000
+                  1.00000 -1.00000 -1.00000
+                  1.00000 -1.00000 1.00000
+                  -1.00000 -1.00000 1.00000
+                  -1.00000 -1.00000 -1.00000
+                  -1.00000 -1.00000 1.00000
+                  -1.00000 1.00000 1.00000
+                  -1.00000 1.00000 -1.00000
+                  1.00000 1.00000 -1.00000
+                  -1.00000 1.00000 -1.00000
+                  -1.00000 1.00000 1.00000
+                  1.00000 1.00000 1.00000
+                  -0.99500 0.99500 -0.98000
+                  -0.99500 -0.99500 -0.98000
+                  0.99500 -0.99500 -0.98000
+                  0.99500 0.99500 -0.98000
+                  0.99500 0.99500 1.00000
+                  0.99500 0.99500 -0.98000
+                  0.99500 -0.99500 -0.98000
+                  0.99500 -0.99500 1.00000
+                  0.99500 -0.99500 1.00000
+                  0.99500 -0.99500 -0.98000
+                  -0.99500 -0.99500 -0.98000
+                  -0.99500 -0.99500 1.00000
+                  -0.99500 0.99500 1.00000
+                  -0.99500 -0.99500 1.00000
+                  -0.99500 -0.99500 -0.98000
+                  -0.99500 0.99500 -0.98000
+                  -0.99500 0.99500 1.00000
+                  -0.99500 0.99500 -0.98000
+                  0.99500 0.99500 -0.98000
+                  0.99500 0.99500 1.00000
+                }
+                Indices FALSE
+                Binding BIND_PER_VERTEX
+                Normalize 0
+              }
+              NormalData {
+                Array TRUE ArrayID 5 Vec3fArray 48 {
+                  0.00000 -0.00000 -1.00000
+                  0.00000 -0.00000 -1.00000
+                  0.00000 -0.00000 -1.00000
+                  0.00000 -0.00000 -1.00000
+                  0.00000 -0.00000 1.00000
+                  0.00000 -0.00000 1.00000
+                  0.00000 -0.00000 1.00000
+                  0.00000 -0.00000 1.00000
+                  0.00000 0.00000 1.00000
+                  0.00000 0.00000 1.00000
+                  0.00000 0.00000 1.00000
+                  0.00000 0.00000 1.00000
+                  1.00000 -0.00000 0.00000
+                  1.00000 -0.00000 0.00000
+                  1.00000 -0.00000 0.00000
+                  1.00000 -0.00000 0.00000
+                  -0.00000 -1.00000 -0.00000
+                  -0.00000 -1.00000 -0.00000
+                  -0.00000 -1.00000 -0.00000
+                  -0.00000 -1.00000 -0.00000
+                  -1.00000 0.00000 -0.00000
+                  -1.00000 0.00000 -0.00000
+                  -1.00000 0.00000 -0.00000
+                  -1.00000 0.00000 -0.00000
+                  0.00000 1.00000 0.00000
+                  0.00000 1.00000 0.00000
+                  0.00000 1.00000 0.00000
+                  0.00000 1.00000 0.00000
+                  0.00000 0.00000 1.00000
+                  0.00000 0.00000 1.00000
+                  0.00000 0.00000 1.00000
+                  0.00000 0.00000 1.00000
+                  -1.00000 0.00000 -0.00000
+                  -1.00000 0.00000 -0.00000
+                  -1.00000 0.00000 -0.00000
+                  -1.00000 0.00000 -0.00000
+                  0.00000 1.00000 0.00000
+                  0.00000 1.00000 0.00000
+                  0.00000 1.00000 0.00000
+                  0.00000 1.00000 0.00000
+                  1.00000 -0.00000 0.00000
+                  1.00000 -0.00000 0.00000
+                  1.00000 -0.00000 0.00000
+                  1.00000 -0.00000 0.00000
+                  -0.00000 -1.00000 -0.00000
+                  -0.00000 -1.00000 -0.00000
+                  -0.00000 -1.00000 -0.00000
+                  -0.00000 -1.00000 -0.00000
+                }
+                Indices FALSE
+                Binding BIND_PER_VERTEX
+                Normalize 0
+              }
+            }
+          }
+        }
+      }
+      Matrix {
+        1.00000 0.00000 0.00000 0.00000
+        0.00000 1.00000 0.00000 0.00000
+        0.00000 0.00000 0.50000 0.00000
+        0.00000 0.00000 0.00000 1.00000
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+<library path="lib/libuwsim_arrows">
+  <class name="SimDev_DirectionalReceiver_Factory" type="SimDev_DirectionalReceiver_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>
+  
+  <class name="SimDev_Flipper_Factory" type="SimDev_Flipper_Factory" base_class_type="uwsim::SimulatedDeviceFactory">
+    <description></description>
+  </class>
+  
+  <class name="SimDev_Depth2Sonar_Factory" type="SimDev_Depth2Sonar_Factory" base_class_type="uwsim::SimulatedDeviceFactory">
+    <description></description>
+  </class>
+  
+  <class name="SimDev_FluidPressure_Factory" type="SimDev_FluidPressure_Factory" base_class_type="uwsim::SimulatedDeviceFactory">
+    <description></description>
+  </class>
+  <class name="SimDev_BeaconReceiver_Factory" type="SimDev_BeaconReceiver_Factory" base_class_type="uwsim::SimulatedDeviceFactory">
+    <description></description>
+  </class>
+</library>

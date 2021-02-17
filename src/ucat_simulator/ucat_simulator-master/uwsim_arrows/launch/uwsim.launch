@@ -1,0 +1,24 @@
+<launch>
+	<arg name="uwsim_params" default="" />
+	<node name="simulation" pkg="uwsim" type="uwsim_binary" output="screen"
+		required="true"
+		args="--dataPath $(find uwsim_arrows)/data --configfile $(find uwsim_arrows)/data/scenes/wreck.xml $(arg uwsim_params)">
+		<remap from="/ucat0/odom" to="/ucat0/sim_odom" />
+	</node>
+	
+	<group ns="ucat0">
+		<param name="robot_description"
+			command="cat $(find uwsim_arrows)/data/robots/U-CAT.rviz.urdf" />
+		
+		<node name="Imu" pkg="tut_arrows" type="Imu.py" output="screen"></node> <!-- to add angular velocity to simulated IMU -->
+		
+		<!--
+		<node name="SetTargetFromRviz" pkg="uwsim_arrows" type="SetTargetFromRviz" output="screen" />
+		
+		<node name="rviz" pkg="rviz" type="rviz"
+			output="screen" args="-d $(find uwsim_arrows)/launch/motion_estimation.rviz"  >
+		</node>
+		--> 
+
+	</group>
+</launch>

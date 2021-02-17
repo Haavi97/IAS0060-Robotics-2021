@@ -1,0 +1,87 @@
+<launch>
+        <arg name="uwsim_params" default="" />
+        <node name="simulation" pkg="uwsim" type="uwsim_binary" output="screen"
+        required="true"
+        args="--dataPath $(find uwsim_arrows)/data --configfile $(find uwsim_arrows)/data/scenes/wreck.xml $(arg uwsim_params)" />
+
+        <group ns="ucat0">
+                <param name="robot_description"
+                command="cat $(find uwsim_arrows)/data/robots/U-CAT.rviz.urdf" />
+                <node name="ucat_buoyance_driver" pkg="uwsim_arrows" type="ucat_buoyance_driver"
+                        output="screen" respawn="true">
+                        <rosparam param="topics">["hw/buoyance/f", "hw/buoyance/b"]</rosparam>
+                        <rosparam param="force_idxs">[0, 1]</rosparam>
+                        <rosparam param="frame_ids">["ucat0/buoyance_f", "ucat0/buoyance_b"]</rosparam>
+                </node>
+                <node name="modem" pkg="tut_arrows_modem" type="tut_arrows_modem"
+                        output="screen" respawn="false"> <rosparam param="serial_port">/dev/ttyUSB0</rosparam>
+                        <rosparam param="modem_id">2</rosparam> <rosparam param="gain">3</rosparam>
+                        <rosparam param="guard_period">7</rosparam>
+                        <remap from="receive_buffer" to="APPLICON_INBOX" />
+                        <remap from="send_buffer" to="APPLICON_OUTBOX" />
+                </node>
+                <node name="TUT_EM" pkg="tut_arrows_modem" type="tut_em"
+                        output="screen" respawn="true">
+                        <rosparam param="time_slot">5</rosparam>
+                        <rosparam param="total_slots">5</rosparam>
+                        <rosparam param="time_slot_length">2</rosparam>
+                        <rosparam param="first_time_slot">0</rosparam>
+                        <remap from="receive_buffer" to="APPLICON_INBOX" />
+                        <remap from="send_buffer" to="APPLICON_OUTBOX" />
+                        <remap from="NED_output" to="/ned" />
+                </node>
+                <node name="ucat_wrench_driver" pkg="tut_arrows" type="ucat_wrench_driver"
+                        output="screen" respawn="true">
+                        <param name="force_mode" value="FAST" />
+                        <param name="min_oa_distance" value="100" />
+                </node>
+
+                <node name="hwu_wrench" pkg="tut_arrows_hwu" type="hwu_wrench"
+                        output="screen" respawn="true">
+                </node>
+
+                <node name="MotionEstimator" pkg="tut_arrows" type="MotionEstimator"
+                        output="screen" respawn="true">
+
+                        <remap from="odom" to="motion_odom" />
+                        <remap from="wrench" to="force_req" />
+                        <remap from="imu" to="hw/imu" />
+                        <remap from="fluid_pressure" to="hw/pressure" />
+
+                        <param name="rate" value="10" />
+
+                        <param name="force_to_velocity_x" value="0.005" />
+                        <param name="force_to_velocity_y" value="0.0025" />
+
+                        <param name="position_x" value="10.0" />
+                        <param name="position_y" value="15.0" />
+                        <param name="position_z" value="-15.0" />
+                        <param name="roll" value="0.0" />
+                        <param name="pitch" value="0.0" />
+                        <param name="yaw" value="-1.57" />
+                </node>
+
+                <node name="odom2navsts" pkg="tut_arrows_hwu" type="odom2navsts"
+                        output="screen" respawn="true">
+                        <remap from="odom" to="motion_odom" />
+                        <param name="origin_lat" value="0.0" />
+                        <param name="origin_long" value="0.0" />
+                </node>
+
+                <node name="main_control" pkg="tut_arrows" type="main_control"
+                        output="screen" respawn="true">
+                </node>
+                <node name="worldmodel_driver" pkg="tut_arrows_hwu" type="worldmodel_driver"
+                        output="screen" respawn="true">
+                        <param name="point_target_topic" value="/clicked_point" />
+                        <param name="pose_target_topic" value="/move_base_simple/goal" />
+                </node>
+                <node name="rviz" pkg="rviz" type="rviz"
+                        output="screen" args="-d $(find uwsim_arrows)/launch/sensors.rviz"  >
+                </node>
+
+        </group>
+
+        <include file="$(find auv_pilot)/launch/load_params.launch"/>
+        <node pkg="auv_pilot" name="auv_pilot" type="pilot"/>
+</launch>

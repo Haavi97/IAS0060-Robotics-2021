@@ -1,0 +1,50 @@
+<launch>
+	<arg name="uwsim_params" default="" />
+	<node name="simulation" pkg="uwsim" type="uwsim_binary" output="screen"
+		required="true"
+		args="--dataPath $(find uwsim_arrows)/data --configfile $(find uwsim_arrows)/data/scenes/wreck.xml $(arg uwsim_params)" />
+
+	<group ns="ucat0">
+		<param name="robot_description"
+			command="cat $(find uwsim_arrows)/data/robots/U-CAT.rviz.urdf" />
+			
+		<node name="MainControl" pkg="tut_arrows" type="MainControl"
+			output="screen" respawn="true">
+			<param name="rate" value="10" />
+
+			<param name="imu_timeout" value="2.0" />
+			<param name="fluid_pressure_timeout" value="2.0" />
+			<param name="cmd_timeout" value="60.0" />
+
+			<param name="scale_x" value="20.0" />
+			<param name="scale_y" value="20.0" />
+			<param name="scale_z" value="20.0" />
+			<param name="scale_yaw" value="5.0" />
+			
+			<rosparam file="$(find tut_arrows)/data/z_controller.yaml" command="load" ns="z_controller" />
+		</node>
+		
+		<node name="WrenchToAcousticMsg" pkg="tut_arrows" type="WrenchToAcousticMsg" output="screen" respawn="true">
+			<remap from="receive_buffer" to="APPLICON_INBOX" />
+			<param name="scale_x" value="20.0" />
+			<param name="scale_y" value="20.0" />
+			<param name="scale_z" value="20.0" />
+			<param name="scale_yaw" value="5.0" />
+		</node>
+		
+		<node name="ucat_wrench_driver" pkg="tut_arrows" type="ucat_wrench_driver"
+			output="screen" respawn="true">
+			<param name="rate" value="10" />
+			<param name="force_req_timeout" value="5.0" />
+			<param name="min_oa_distance" value="2.0" /> <!-- when min_oa_distance is greater than oa_distance then OA is disabled -->
+			<param name="oa_distance" value="1.0" />
+			<param name="oa_ratio" value="4.0" />
+			<param name="oa_timeout" value="5.0" />
+		</node>
+		
+		<node name="rviz" pkg="rviz" type="rviz"
+			output="screen" args="-d $(find uwsim_arrows)/launch/sensors.rviz"  >
+		</node>
+	</group>
+
+</launch>

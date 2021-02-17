@@ -1,0 +1,25 @@
+<launch>
+	<group ns="ucat0">
+		<node name="joy_node" pkg="joy" type="joy_node" output="screen" respawn="true">
+			<param name="dev" value="/dev/input/js1" />
+		</node>
+		<node name="RemoteDriver" pkg="tut_arrows" type="RemoteDriver" output="screen" respawn="true">
+			<remap from="force_req" to="rc_force_req" />
+
+			<param name="rate" value="5" />
+			
+			<param name="axis_x" value="1" />
+			<param name="axis_y" value="0" />
+			<param name="axis_z" value="3" />
+			<param name="axis_roll" value="4" />
+			<param name="axis_pitch" value="5" />
+			<param name="axis_yaw" value="2" />
+			
+			<param name="button_fast" value="0" />
+			<param name="button_slow" value="2" />
+			
+			<param name="button_depth_up" value="5" />
+			<param name="button_depth_down" value="7" />
+		</node>
+	</group>
+</launch>

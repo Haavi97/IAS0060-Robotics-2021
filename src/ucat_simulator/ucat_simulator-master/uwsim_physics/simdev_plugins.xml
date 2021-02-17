@@ -1,0 +1,9 @@
+<library path="lib/libuwsim_physics">
+  <class name="SimDev_VehiclePhysics_Factory" type="SimDev_VehiclePhysics_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>
+  <class name="SimDev_VehiclePhysicsForce_Factory" type="SimDev_VehiclePhysicsForce_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>  
+  <class name="SimDev_VehicleMass_Factory" type="SimDev_VehicleMass_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>
+  <class name="SimDev_VehicleBuoyance_Factory" type="SimDev_VehicleBuoyance_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>
+  <class name="SimDev_VehicleThruster_Factory" type="SimDev_VehicleThruster_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>
+  <class name="SimDev_VehicleFin_Factory" type="SimDev_VehicleFin_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>
+  <class name="SimDev_VehicleDrag_Factory" type="SimDev_VehicleDrag_Factory" base_class_type="uwsim::SimulatedDeviceFactory"><description></description></class>
+</library>

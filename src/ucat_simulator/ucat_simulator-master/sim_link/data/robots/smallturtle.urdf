@@ -1,0 +1,177 @@
+<?xml version="1.0"?>
+<robot name="girona500">
+
+	<link name="base_link_">
+		<visual>
+			<geometry>
+				<sphere radius="0.01" />
+			</geometry>
+			<material name="red">
+				<color rgba="0.9 0.0 0.0 1" />
+			</material>
+		</visual>
+		<collision>
+			<origin rpy="0 0 0"  xyz="0 0 0"/>
+			<geometry>
+				<cylinder radius="0.17" length="0.20" />
+			</geometry>
+		</collision>
+	</link>
+
+	<link name="base_link">
+		<visual>
+			<origin rpy="0 -1.57 0" xyz="0 0 0" />
+			<geometry>
+				<cylinder radius="0.05" length="0.13" />
+			</geometry>
+			<material name="yellow">
+				<color rgba="0.9 0.9 0.0 1" />
+			</material>
+		</visual>
+	</link>
+
+	<joint name="base_to_baselink" type="fixed">
+		<parent link="base_link_" />
+		<child link="base_link" />
+		<origin rpy="0 0 0" xyz="0 0 0" />
+	</joint>
+	
+	<link name="cameracentre">
+		<visual>
+			<material name="black">
+			  <color rgba="0.0 0.0 0.0 1.0" />
+			</material>
+			<geometry>
+				<sphere radius="0.000"/>
+			</geometry>
+			
+		</visual>
+		<collision>
+			<geometry>
+				<sphere radius="0.0"/>
+			</geometry>
+		</collision>
+	</link>
+
+	<joint name="base_to_cameracentre" type="fixed">
+		<parent link="base_link_" />
+		<child link="cameracentre" />
+		<origin rpy="-1.77 0 1.57" xyz="0.07 0 -0.05" />
+	</joint>
+
+	<link name="tail">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0" />
+			<geometry>
+				<sphere radius="0.05" />
+			</geometry>
+			<material name="yellow"/>
+		</visual>
+	</link>
+
+	<joint name="baselink_to_tail" type="fixed">
+		<parent link="base_link" />
+		<child link="tail" />
+		<origin rpy="0 0 0" xyz="-0.065 0 0" />
+	</joint>
+
+	<link name="dot">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0" />
+			<geometry>
+				<sphere radius="0.01" />
+			</geometry>
+		</visual>
+	</link>
+
+	<joint name="baselink_to_dot" type="fixed">
+		<parent link="base_link" />
+		<child link="dot" />
+		<origin rpy="0 0 0" xyz="-0.06 0 -0.06" />
+	</joint>
+
+	<link name="nose">
+		<visual>
+			<origin rpy="0 0 0" xyz="0 0 0" />
+			<geometry>
+				<sphere radius="0.05" />
+			</geometry>
+			<material name="glass">
+				<color rgba="0.035 0.388 0.475 1" />
+			</material>
+		</visual>
+	</link>
+
+	<joint name="baselink_to_nose" type="fixed">
+		<parent link="base_link" />
+		<child link="nose" />
+		<origin rpy="0 0 0" xyz="0.065 0 0" />
+	</joint>
+
+	<!-- motor 1 -->
+	<link name="frontrightflipper">
+		<visual>
+			<origin rpy="0 0 0" xyz="-0.0175 0.02 0" />
+			<geometry>
+				<box size="0.075 0.04 0.01" />
+			</geometry>
+			<material name="grey">
+				<color rgba="0.1 0.1 0.1 1" />
+			</material>
+		</visual>
+	</link>
+	<joint name="baselink_to_frontrightflipper" type="continuous">
+		<parent link="base_link" />
+		<child link="frontrightflipper" />
+		<origin rpy="0 0 -0.785" xyz="0.085 0.04 0" />
+		<axis xyz="0 1 0" />
+	</joint>
+	<!-- motor 2 -->
+	<link name="backrightflipper">
+		<visual>
+			<origin rpy="0 0 0" xyz="-0.0175 0.02 0" />
+			<geometry>
+				<box size="0.075 0.04 0.01" />
+			</geometry>
+			<material name="grey"/>
+		</visual>
+	</link>
+	<joint name="baselink_to_backrightflipper" type="continuous">
+		<parent link="base_link" />
+		<child link="backrightflipper" />
+		<origin rpy="0 0 0.785" xyz="-0.085 0.04 0" />
+		<axis xyz="0 1 0" />
+	</joint>
+	<!-- motor 3 -->
+	<link name="backleftflipper">
+		<visual>
+			<origin rpy="0 0 0" xyz="-0.0175 -0.02 0" />
+			<geometry>
+				<box size="0.075 0.04 0.01" />
+			</geometry>
+			<material name="grey"/>
+		</visual>
+	</link>
+	<joint name="baselink_to_backleftflipper" type="continuous">
+		<parent link="base_link" />
+		<child link="backleftflipper" />
+		<origin rpy="0 0 -0.785" xyz="-0.085 -0.04 0" />
+		<axis xyz="0 1 0" />
+	</joint>
+	<!-- motor 4 -->
+	<link name="frontleftflipper">
+		<visual>
+			<origin rpy="0 0 0" xyz="-0.0175 -0.02 0" />
+			<geometry>
+				<box size="0.075 0.04 0.01" />
+			</geometry>
+			<material name="grey"/>
+		</visual>
+	</link>
+	<joint name="baselink_to_frontleftflipper" type="continuous">
+		<parent link="base_link" />
+		<child link="frontleftflipper" />
+		<origin rpy="0 0 0.785" xyz="0.085 -0.04 0" />
+		<axis xyz="0 1 0" />
+	</joint>
+</robot>

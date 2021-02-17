@@ -1,0 +1,137 @@
+<launch>
+	<arg name="uwsim_params" default="" />
+	<node name="simulation" pkg="uwsim" type="uwsim_binary" output="screen"
+		required="true"
+		args="--dataPath $(find uwsim_arrows)/data --configfile $(find uwsim_arrows)/data/scenes/wreck.xml $(arg uwsim_params)" />
+
+	<group ns="ucat0">
+		<param name="robot_description"
+			command="cat $(find uwsim_arrows)/data/robots/U-CAT.rviz.urdf" />
+
+		<node name="ucat_buoyance_driver" pkg="uwsim_arrows" type="ucat_buoyance_driver"
+			output="screen" respawn="true">
+			<rosparam param="topics">["hw/buoyance/f", "hw/buoyance/b"]</rosparam>
+			<rosparam param="force_idxs">[0, 1]</rosparam>
+			<rosparam param="frame_ids">["ucat0/buoyance_f", "ucat0/buoyance_b"]</rosparam>
+		</node>
+
+		<node name="WrenchDriver" pkg="tut_arrows" type="WrenchDriver" output="screen" respawn="true">
+		</node>
+		
+		<node name="hwu_wrench" pkg="tut_arrows_hwu" type="hwu_wrench"
+			output="screen" respawn="true">
+		</node>
+
+		<node name="MotionEstimator" pkg="tut_arrows" type="MotionEstimator" output="screen" respawn="true">
+			<remap from="odom" to="motion_odom" />
+			<remap from="wrench" to="force_req" />
+			<remap from="imu" to="hw/imu" />
+			<remap from="fluid_pressure" to="hw/pressure" />
+			
+			<param name="rate" value="10" />
+			
+			<param name="position_x" value="10.0" />
+			<param name="position_y" value="15.0" />
+			<param name="position_z" value="-5.0" />
+			<param name="roll" value="0.0" />
+			<param name="pitch" value="0.0" />
+			<param name="yaw" value="-1.57" />
+			
+			<param name="mass" value="30" />
+			
+			<param name="force_x_coef" value="0.8" />
+			<param name="force_y_coef" value="0.8" />
+			<param name="torque_z_coef" value="1.0" />
+			
+			<param name="measurementVariance" value="0.4" />
+			<param name="likelihoodThreshold" value="0.2" />
+			
+			<param name="alfa1" value="1.0" />
+			<param name="alfa2" value="0.2" />
+			<param name="alfa3" value="0.2" />
+			<param name="alfa4" value="1.0" />
+			
+			<rosparam param="beacons"></rosparam>
+		</node>
+
+		<node name="odom2navsts" pkg="tut_arrows_hwu" type="odom2navsts"
+			output="screen" respawn="true">
+			<!--remap from="odom" to="motion_odom" /-->
+			<param name="origin_lat" value="35.0" />
+			<param name="origin_long" value="35.0" />
+		</node>
+		
+		<!--node name="beaconping2navsts" pkg="tut_arrows_hwu" type="beaconping2navsts"
+			output="screen" respawn="true">
+		</node-->
+		
+		<node name="MainControl" pkg="tut_arrows" type="MainControl" output="screen" respawn="true">
+			<param name="rate" value="10" />
+			
+			<param name="mode" value="RC" />
+
+			<param name="scale_x" value="14.0" />
+			<param name="scale_y" value="14.0" />
+			<param name="scale_z" value="14.0" />
+			<param name="scale_yaw" value="4.0" />
+			
+			<param name="oa_enabled" value="True" />
+			<param name="min_oa_distance" value="0.2" />
+			<param name="oa_distance" value="2.0" />
+			<param name="oa_timeout" value="2.0" />
+			
+			<rosparam file="$(find tut_arrows)/data/x_controller.yaml" command="load" ns="x_controller" />
+			<rosparam file="$(find tut_arrows)/data/y_controller.yaml" command="load" ns="y_controller" />
+			<rosparam file="$(find tut_arrows)/data/z_controller.yaml" command="load" ns="z_controller" />
+			<rosparam file="$(find tut_arrows)/data/yaw_controller.yaml" command="load" ns="yaw_controller" />
+			
+<!-- 			<param name="target_file" value="$(find tut_arrows)/data/targets.txt" /> -->
+		</node>
+		
+		<node name="worldmodel_driver" pkg="tut_arrows_hwu" type="worldmodel_driver"
+			output="screen" respawn="true">
+			<param name="point_target_topic" value="/clicked_point" />
+			<param name="pose_target_topic" value="/move_base_simple/goal" />
+		</node>
+		
+		<!--
+		<node name="ranges2pointcloud" pkg="tut_arrows" type="ranges2pointcloud"
+			output="screen" respawn="true">
+			<rosparam param="range_topics">["sonar/ff", "sonar/fl", "sonar/fr", "sonar/fu", "sonar/fd", "sonar/l", "sonar/r", "sonar/b"]</rosparam>
+			<param name="frame_id" value="ucat0/base_link" />
+			<param name="max_range" value="8.0" />
+		</node>
+		-->
+		
+		<!-- args="$(find uwsim_arrows)/launch/map.bt"  -->
+		<!--
+		<node name="octomap_server" pkg="octomap_server" type="octomap_server_node"  
+			output="screen" respawn="true">
+			<remap from="cloud_in" to="range_points" />
+			<param name="frame_id" value="world" />
+			<param name="resolution" value="0.5" />
+			<param name="base_frame_id" value="ucat0/base_link" />
+			<param name="latch" value="false" />
+			
+			<param name="sensor_model/hit" value="0.7" />
+			<param name="sensor_model/miss" value="0.4" />
+			
+			<param name="sensor_model/min" value="0.12" />
+			<param name="sensor_model/max" value="0.97" />
+		</node>
+		
+		<node pkg="tut_arrows" name="key_teleop_wrench" type="key_teleop_wrench.py"/>
+		run in separate terminal: rosrun tut_arrows key_teleop_wrench.py __ns:=ucat0
+		-->
+		
+		<node name="rviz" pkg="rviz" type="rviz"
+			output="screen" args="-d $(find uwsim_arrows)/launch/sensors.rviz"  >
+		</node>
+	</group>
+	
+	<include file="$(find auv_pilot)/launch/load_params.launch"/>
+	<node pkg="auv_pilot" name="auv_pilot" type="pilot"/>
+	<!--
+	<node pkg="auv_joy" name="auv_joy" type="auv_joy"/>	
+	-->
+</launch>

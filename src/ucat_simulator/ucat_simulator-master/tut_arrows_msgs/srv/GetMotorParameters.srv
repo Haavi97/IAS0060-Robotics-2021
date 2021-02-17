@@ -1,0 +1,6 @@
+#request fields
+byte motorNr
+---
+#response fields
+MotorParameters params
+

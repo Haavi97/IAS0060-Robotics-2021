@@ -1,0 +1,46 @@
+Coordinate converter
+---------------
+Node name: "coordinate_converter"
+
+The node is used to convert between GPS coordinates and the metric coordinate
+system used by localisation and navigation nodes. It sets the starting position
+of the robot and the beacons and sets new navigation targets.
+
+All degrees are fractions -- the digits after the period are fractions of a
+degree, not arc minutes and seconds.
+
+First thing the node does is set the locations of beacons to MotionEstimator
+private parameters. For example, the following sets /ucat0/MotionEstimator/beacons
+when used inside the coordinate_converter node tags in the launch file.
+
+<rosparam param="beacons">
+  beacon1: {latitude: 59.0, longitude: 23.0, depth: 1.05}
+  beacon2: {latitude: 59.0, longitude: 23.0, depth: 1.05}
+  beacon3: {latitude: 59.0, longitude: 23.0, depth: 1.05}
+</rosparam>
+
+Secondly, it sets the robot location as soon as MotionEstimator starts up. The
+robot location is specified in the launch file as follows.
+
+<rosparam param="input">
+  latitude: 38.015775
+  longitude: 12.506716
+  depth: 0.0
+</rosparam>
+
+After beacons and robot position are set, the node will start to listen for
+sensor_msgs/NavSatFix messages on "coordinates_input" topic. Each time a new
+waypoint is received, the node calls the SetTarget service to send the robot
+toward the waypoint.
+
+Additionally, when sensor_msgs/NavSatFix messages arrive in "gps_input" topic,
+the node sets robot position to the new coordinates, overwriting the initial
+position.
+
+The tool can be used on the command line to convert from GPS coordinates to
+meters. The command for it is
+
+rosrun tut_arrows coordinate_converter _input/latitude:=38.015775 _input/longitude:=12.506716 _input/depth:=1.0
+
+After the metric coordinates are printed on the screen, terminate the node with
+Ctrl+C.

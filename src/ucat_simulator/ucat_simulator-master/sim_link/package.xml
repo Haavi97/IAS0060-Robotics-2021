@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>sim_link</name>
+  <version>0.0.0</version>
+  <description>Link between UWSim and London robots</description>
+  <maintainer email="rasmus.raag@ttu.ee">Rasmus Raag</maintainer>
+  <license>BSD</license>
+  <url type="ARROWS project">http://www.arrowsproject.eu/</url>
+  <author email="rasmus.raag@ttu.ee">Rasmus Raag</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>uwsim_physics_msgs</build_depend>
+  <build_depend>tut_arrows_msgs</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>uwsim_physics_msgs</run_depend>
+  <run_depend>tut_arrows_msgs</run_depend>
+
+  <export>
+  </export>
+</package>

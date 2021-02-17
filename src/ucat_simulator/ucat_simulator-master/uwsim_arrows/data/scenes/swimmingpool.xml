@@ -1,0 +1,799 @@
+<?xml version="1.0"?>
+
+<!DOCTYPE UWSimScene SYSTEM "UWSimScene.dtd" >
+
+<UWSimScene>
+	<oceanState>
+		<windx> 0.04 </windx>
+		<windy> 0.04 </windy>
+		<windSpeed> 12 </windSpeed>
+		<depth> 200 </depth>
+		<reflectionDamping> 0.35 </reflectionDamping>
+		<waveScale> 0 </waveScale>
+		<isNotChoppy> 1 </isNotChoppy>
+		<choppyFactor> 0 </choppyFactor>
+		<crestFoamHeight> 0 </crestFoamHeight>
+		<oceanSurfaceHeight> 0 </oceanSurfaceHeight>
+		<fog>
+			<density> 0.09</density>
+			<color>
+				<r>0</r>
+				<g>0.05</g>
+				<b>0.3</b>
+			</color>
+		</fog>
+		<color>
+			<r>0.0</r>
+			<g>0.05</g>
+			<b>0.3</b>
+		</color>
+		<attenuation>
+			<r>0.015</r>
+			<g>0.0075 </g>
+			<b> 0.005 </b>
+		</attenuation>
+	</oceanState>
+	<simParams>
+		<disableShaders> 0 </disableShaders>
+		<resw> 1024 </resw>
+		<resh> 768 </resh>
+		<offsetp>
+			<x>0</x>
+			<y>0</y>
+			<z>0</z>
+		</offsetp>
+		<offsetr>
+			<x>0</x>
+			<y>0</y>
+			<z>0</z>
+		</offsetr>
+		<enablePhysics> 1 </enablePhysics>
+		<gravity>
+			<x> 0</x>
+			<y> 0</y>
+			<z> -9.81 </z>
+		</gravity>
+		<physicsFrequency>200</physicsFrequency>
+	</simParams>
+	<camera>
+		<freeMotion> 0 </freeMotion>
+		<objectToTrack>ucat0/base_link</objectToTrack>
+		<fov> 78 </fov>
+		<aspectRatio> 1.33 </aspectRatio>
+		<near> 0.01 </near>
+		<far> 10000 </far>
+		<position>
+			<x> 0 </x>
+			<y> 2 </y>
+			<z> -1.5 </z>
+		</position>
+		<lookAt>
+			<x> 0 </x>
+			<y> 0 </y>
+			<z> -1.5 </z>
+		</lookAt>
+	</camera>
+
+	<vehicle>
+		<name>ucat0</name>
+		<file>robots/U-CAT.urdf</file>
+
+		<position>
+			<x> 0 </x>
+			<y> 0 </y>
+			<z> 0 </z>
+		</position>
+		<orientation>
+			<r>0</r>
+			<p>0</p>
+			<y>-1.57</y>
+		</orientation>
+		
+		<virtualCamera>
+			<name>ucat0_camera</name>
+			<relativeTo>camera_link</relativeTo>
+			<resw> 640 </resw>
+			<resh> 480 </resh>
+			 
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			
+			<frameId> camera_link_optical </frameId>
+		</virtualCamera>
+
+		<!-- <structuredLightProjector> <name>laser_projector</name> <relativeTo>base_link</relativeTo> 
+			<fov>30</fov> <image_name>meshes/flashlamp256.png</image_name> <visible>1</visible> 
+			<position> <x>0.3</x> <y> 0 </y> <z>-0.1</z> </position> <orientation> <r>1.07</r> 
+			<p>0</p> <y>-1.57</y> </orientation> </structuredLightProjector> -->	
+		
+		<imu>
+			<name>imu</name>
+			<relativeTo>base_link</relativeTo>
+			<position>
+				<x>0</x>
+				<y>0</y>
+				<z>0</z>
+			</position>
+			<orientation>
+				<r>0</r>
+				<p>0</p>
+				<y>0</y>
+			</orientation>
+			<std>0.00000001</std>
+		</imu>
+
+		<pressureSensor>
+			<name>pressureSensor</name>
+			<relativeTo>base_link</relativeTo>
+			<position>
+				<x>0</x>
+				<y>0</y>
+				<z>0.13</z>
+			</position>
+			<orientation>
+				<r>0</r>
+				<p>0</p>
+				<y>0</y>
+			</orientation>
+			<std>0.02</std>
+		</pressureSensor>
+
+		<virtualRangeImage>
+			<name>ucat0_sonar_ff</name>
+			<relativeTo>sonar_ff</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>40</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+		
+		<virtualRangeImage>
+			<name>ucat0_sonar_fl</name>
+			<relativeTo>sonar_fl</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>40</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+		
+		<virtualRangeImage>
+			<name>ucat0_sonar_fr</name>
+			<relativeTo>sonar_fr</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>40</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+
+		<virtualRangeImage>
+			<name>ucat0_sonar_fu</name>
+			<relativeTo>sonar_fu</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>40</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+
+		<virtualRangeImage>
+			<name>ucat0_sonar_fd</name>
+			<relativeTo>sonar_fd</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>40</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+
+		<virtualRangeImage>
+			<name>ucat0_sonar_l</name>
+			<relativeTo>sonar_l</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>20</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+
+		<virtualRangeImage>
+			<name>ucat0_sonar_r</name>
+			<relativeTo>sonar_r</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>20</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+
+		<virtualRangeImage>
+			<name>ucat0_sonar_b</name>
+			<relativeTo>sonar_b</relativeTo>
+			<resw> 64 </resw>
+			<resh> 64 </resh>
+			<orientation>
+				<r>1.57</r>
+				<p>0</p>
+				<y>-1.57</y>
+			</orientation>
+			<parameters>
+				<fx>110</fx>
+				<fy>110</fy>
+				<x0>32</x0>
+				<y0>32</y0>
+				<f>20</f>
+				<n>0.03</n>
+				<k>0</k>
+			</parameters>
+		</virtualRangeImage>
+
+		<vehiclePhysics>
+			<name>arrows_physics</name>
+			<linkName>base_link</linkName>
+			<physics>
+				<mass> 20 </mass>
+				<inertia>
+					<x> 0.144 </x>
+					<y> 0.275306667 </y>
+					<z> 0.275306667 </z>
+				</inertia>
+				<collisionShapeType>compound box</collisionShapeType>
+				<linearDamping>0.1</linearDamping>
+				<angularDamping>0.1</angularDamping>
+				<isKinematic>0</isKinematic>
+			</physics>
+			<debugForceRatio>0</debugForceRatio>
+		</vehiclePhysics>
+
+		<vehicleMass>
+			<name>main_mass</name>
+			<relativeTo>base_link</relativeTo>
+			<mass>10</mass>
+			<mass>10</mass>
+			<position>
+				<x> 0.10 </x>
+				<y> 0.0 </y>
+				<z> -0.04 </z>
+			</position>
+			<position>
+				<x> -0.10 </x>
+				<y> 0.0 </y>
+				<z> -0.04 </z>
+			</position>
+			<debugForceRatio>0.0005</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 0 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleMass>
+		
+		<vehicleBuoyance>
+			<name>buoyance</name>
+			<relativeTo>base_link</relativeTo>
+			<radius>0.05</radius>
+			<mass>0</mass>
+			<mass>0</mass>
+			<position>
+				<x> 0.13 </x>
+				<y> 0 </y>
+				<z> 0.05 </z>
+			</position>
+			<position>
+				<x> -0.13 </x>
+				<y> 0 </y>
+				<z> 0.05 </z>
+			</position>
+			<isROS>1</isROS>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 1 </r>
+				<g> 1 </g>
+				<b> 1 </b>
+			</color>
+		</vehicleBuoyance>
+
+		<vehicleBuoyance>
+			<name>floater</name>
+			<relativeTo>base_link</relativeTo>
+			<radius>0.15</radius>
+			<mass>-10</mass>
+			<mass>-10</mass>
+			<position>
+				<x> 0.15 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</position>
+			<position>
+				<x> -0.15 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</position>
+			<debugForceRatio>0.001</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 0 </g>
+				<b> 1 </b>
+			</color>
+		</vehicleBuoyance>
+
+		<vehicleDrag>
+			<name>drag_bodyB</name>
+			<relativeTo>base_link</relativeTo>
+			<radius>0.14</radius>
+			<tranDrag>
+				<x> 0.0067824 </x><!-- 0.3 * (3.14 * 0.12^2) / 2 -->
+				<y> 0.0576 </y><!-- 0.8 * (0.24 * 0.30) -->
+				<z> 0.0576 </z><!-- 0.8 * (0.24 * 0.30) -->
+			</tranDrag>
+			<maxForce>10000</maxForce>
+			<tranLift>
+				<x> 0 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</tranLift>
+			<position>
+				<x> -0.20 </x>
+				<y> 0.0 </y>
+				<z> 0.0 </z>
+			</position>
+			<debugForceRatio>0.1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<vehicleDrag>
+			<name>drag_bodyF</name>
+			<relativeTo>base_link</relativeTo>
+			<radius>0.14</radius>
+			<tranDrag>
+				<x> 0.0067824 </x><!-- 0.3 * (3.14 * 0.12^2) / 2 -->
+				<y> 0.0576 </y><!-- 0.8 * (0.24 * 0.30) -->
+				<z> 0.0576 </z><!-- 0.8 * (0.24 * 0.30) -->
+			</tranDrag>
+			<maxForce>10000</maxForce>
+			<tranLift>
+				<x> 0 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</tranLift>
+			<position>
+				<x> 0.20 </x>
+				<y> 0.0 </y>
+				<z> 0.0 </z>
+			</position>
+			<debugForceRatio>0.1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<vehicleDrag>
+			<name>drag_bodyL</name>
+			<relativeTo>base_link</relativeTo>
+			<radius>0.04</radius>
+			<tranDrag>
+				<x> 0.0 </x>
+				<y> 0.0 </y>
+				<z> 0.021 </z> <!-- 0.3*0.07*1 -->
+			</tranDrag>
+			<maxForce>500</maxForce>
+			<tranLift>
+				<x> 0 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</tranLift>
+			<position>
+				<x> 0.00 </x>
+				<y> 0.15 </y>
+				<z> 0.0 </z>
+			</position>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<vehicleDrag>
+			<name>drag_bodyR</name>
+			<relativeTo>base_link</relativeTo>
+			<radius>0.04</radius>
+			<tranDrag>
+				<x> 0.000 </x>
+				<y> 0.000 </y>
+				<z> 0.021 </z>
+			</tranDrag>
+			<maxForce>500</maxForce>
+			<tranLift>
+				<x> 0 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</tranLift>
+			<position>
+				<x> 0.00 </x>
+				<y> -0.15 </y>
+				<z> 0.0 </z>
+			</position>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<vehicleDrag>
+			<name>drag_frontrightflipper</name>
+			<relativeTo>frontrightflipper</relativeTo>
+			<radius>0.10</radius>
+			<tranDrag>
+				<x> 0.0004 </x>
+				<y> 0.0004 </y>
+				<z> 0.023 </z>
+			</tranDrag>
+			<maxForce>500</maxForce>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<vehicleDrag>
+			<name>drag_frontleftflipper</name>
+			<relativeTo>frontleftflipper</relativeTo>
+			<radius>0.10</radius>
+			<tranDrag>
+				<x> 0.0004 </x>
+				<y> 0.0004 </y>
+				<z> 0.023 </z>
+			</tranDrag>
+			<maxForce>500</maxForce>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<vehicleDrag>
+			<name>drag_backrightflipper</name>
+			<relativeTo>backrightflipper</relativeTo>
+			<radius>0.10</radius>
+			<tranDrag>
+				<x> 0.0004 </x>
+				<y> 0.0004 </y>
+				<z> 0.023 </z>
+			</tranDrag>
+			<maxForce>500</maxForce>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<vehicleDrag>
+			<name>drag_backleftflipper</name>
+			<relativeTo>backleftflipper</relativeTo>
+			<radius>0.10</radius>
+			<tranDrag>
+				<x> 0.0004 </x>
+				<y> 0.0004 </y>
+				<z> 0.023 </z>
+			</tranDrag>
+			<maxForce>500</maxForce>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 0 </r>
+				<g> 1 </g>
+				<b> 0 </b>
+			</color>
+		</vehicleDrag>
+
+		<flipper>
+			<name>right_fin</name>
+			<relativeTo>frontrightflipper</relativeTo>
+			<radius>0.06</radius>
+			<jointName>baselink_to_frontrightflipper</jointName>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 1 </r>
+				<g> 1 </g>
+				<b> 1 </b>
+			</color>
+			<forceMultiplier>0.7</forceMultiplier>
+			<maxForce>15.0</maxForce>
+			<multPower>1.2</multPower>
+			<forceAngle>-0.4</forceAngle>
+		</flipper>
+
+		<flipper>
+			<name>right_fin_</name>
+			<relativeTo>backrightflipper</relativeTo>
+			<radius>0.06</radius>
+			<jointName>baselink_to_backrightflipper</jointName>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 1 </r>
+				<g> 1 </g>
+				<b> 1 </b>
+			</color>
+			<forceMultiplier>0.7</forceMultiplier>
+			<maxForce>15.0</maxForce>
+			<multPower>1.2</multPower>
+			<forceAngle>-0.4</forceAngle>
+		</flipper>
+
+		<flipper>
+			<name>left_fin_</name>
+			<relativeTo>backleftflipper</relativeTo>
+			<radius>0.06</radius>
+			<jointName>baselink_to_backleftflipper</jointName>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 1 </r>
+				<g> 1 </g>
+				<b> 1 </b>
+			</color>
+			<forceMultiplier>0.7</forceMultiplier>
+			<maxForce>15.0</maxForce>
+			<multPower>1.2</multPower>
+			<forceAngle>-0.4</forceAngle>
+		</flipper>
+
+		<flipper>
+			<name>left_fin</name>
+			<relativeTo>frontleftflipper</relativeTo>
+			<radius>0.06</radius>
+			<jointName>baselink_to_frontleftflipper</jointName>
+			<debugForceRatio>1</debugForceRatio>
+			<color>
+				<r> 1 </r>
+				<g> 1 </g>
+				<b> 1 </b>
+			</color>
+			<forceMultiplier>0.7</forceMultiplier>
+			<maxForce>15.0</maxForce>
+			<multPower>1.2</multPower>
+			<forceAngle>-0.4</forceAngle>
+		</flipper>
+		<beaconReceiver>
+			<name>beaconReceiver</name>
+			<relativeTo>base_link</relativeTo>
+			<sensitiveTo>beacon1</sensitiveTo>
+			<sensitiveTo>beacon2</sensitiveTo>
+			<requiresLineOfSight>1</requiresLineOfSight>
+			<notBlockedBy>ucat0</notBlockedBy>
+			<range>750</range>
+			<visible>0</visible>
+			<position>
+				<x> 0 </x>
+				<y> 0 </y>
+				<z> 0 </z>
+			</position>
+			<orientation>
+				<r> 0 </r>
+				<p> 0</p>
+				<y> 0</y>
+			</orientation>
+		</beaconReceiver>
+	</vehicle>
+
+	<object>
+		<name>terrain</name>
+		<file>meshes/swimmingpool.ive</file>
+		<position>
+			<x>0</x>
+			<y>0</y>
+			<z>-1</z>
+		</position>
+		<orientation>
+			<r>0</r>
+			<p>0</p>
+			<y>0</y>
+		</orientation>
+		<physics>
+			<mass> 0 </mass>
+			<collisionShapeType> trimesh </collisionShapeType>
+			<isKinematic>1</isKinematic>
+		</physics>
+	</object>
+	
+	<rosInterfaces>
+		<PATToROSOdom>
+			<topic>ucat0/odom</topic>
+			<vehicleName> ucat0 </vehicleName>
+			<rate>15</rate>
+		</PATToROSOdom>
+		<WorldToROSTF>
+      		<rootName> world </rootName>
+      		<enableObjects> 1 </enableObjects>
+      		<rate>10</rate>
+    	</WorldToROSTF>
+    	
+		<ArmToROSJointState>
+			<topic>ucat0/joint_states</topic>
+			<vehicleName> ucat0 </vehicleName>
+		</ArmToROSJointState>
+
+		<VirtualCameraToROSImage>
+			<cameraName>ucat0_camera</cameraName>
+			<imageTopic>ucat0/camera/image</imageTopic>
+			<infoTopic>ucat0/camera/camera_info</infoTopic>
+		</VirtualCameraToROSImage>
+
+		<ImuToROSImu>
+			<name>imu</name>
+			<topic>ucat0/hw/imu</topic>
+			<rate>20</rate>
+		</ImuToROSImu>
+
+		<flipperROS>
+			<vehicleName> ucat0 </vehicleName>
+			<topic> ucat0/hw/flippers_cmd </topic>
+		</flipperROS>
+
+		<depth2SonarROS>
+			<name> ucat0_sonar_b </name>
+			<topic> ucat0/hw/sonar/b </topic>
+			<frameId>ucat0/sonar_b</frameId>
+			<divisor> 4 </divisor>
+		</depth2SonarROS>
+		<depth2SonarROS>
+			<name> ucat0_sonar_ff </name>
+			<topic> ucat0/hw/sonar/ff </topic>
+			<frameId>ucat0/sonar_ff</frameId>
+			<divisor> 4 </divisor>
+			<publishAll> 0 </publishAll>
+		</depth2SonarROS>
+		<depth2SonarROS>
+			<name> ucat0_sonar_fl </name>
+			<topic> ucat0/hw/sonar/fl </topic>
+			<frameId>ucat0/sonar_fl</frameId>
+			<divisor> 4 </divisor>
+		</depth2SonarROS>
+		<depth2SonarROS>
+			<name> ucat0_sonar_fr </name>
+			<topic> ucat0/hw/sonar/fr </topic>
+			<frameId>ucat0/sonar_fr</frameId>
+			<divisor> 4 </divisor>
+		</depth2SonarROS>
+		<depth2SonarROS>
+			<name> ucat0_sonar_fu </name>
+			<topic> ucat0/hw/sonar/fu </topic>
+			<frameId>ucat0/sonar_fu</frameId>
+			<divisor> 4 </divisor>
+		</depth2SonarROS>
+		<depth2SonarROS>
+			<name> ucat0_sonar_fd </name>
+			<topic> ucat0/hw/sonar/fd </topic>
+			<frameId>ucat0/sonar_fd</frameId>
+			<divisor> 4 </divisor>
+		</depth2SonarROS>
+		<depth2SonarROS>
+			<name> ucat0_sonar_l </name>
+			<topic> ucat0/hw/sonar/l </topic>
+			<frameId>ucat0/sonar_l</frameId>
+			<divisor> 4 </divisor>
+		</depth2SonarROS>
+		<depth2SonarROS>
+			<name> ucat0_sonar_r </name>
+			<topic> ucat0/hw/sonar/r </topic>
+			<frameId>ucat0/sonar_r</frameId>
+			<divisor> 4 </divisor>
+		</depth2SonarROS>
+
+		<fluidPressureROS>
+			<name>pressureSensor</name>
+			<topic>ucat0/hw/pressure</topic>
+			<frameId>ucat0/base_link</frameId>
+			<rate>5</rate>
+		</fluidPressureROS>
+		<beaconReceiverROS>
+			<name> beaconReceiver </name>
+			<topic>ucat0/hw/beaconReceiver</topic>
+			<rate>1</rate>
+		</beaconReceiverROS>
+		
+		<vehicleBuoyanceROS>
+			<vehicleName>ucat0</vehicleName>
+			<topic>ucat0/buoyance_force_cmd</topic>
+			<infoTopic>ucat0/buoyance_force</infoTopic>
+		</vehicleBuoyanceROS>
+	</rosInterfaces>
+</UWSimScene>
+
+

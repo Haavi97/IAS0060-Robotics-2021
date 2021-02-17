@@ -1,0 +1,61 @@
+<launch>
+	<group ns="ucat0">
+		<node name="modem" pkg="tut_arrows_drivers" type="seamodem_driver" 
+			output="screen" respawn="true">
+			<rosparam param="serial_port">/dev/ttyUSB0</rosparam> 
+			<rosparam param="modem_id">5</rosparam> 
+			<rosparam param="gain">1</rosparam>
+			<rosparam param="guard_period">7</rosparam>
+			<rosparam param="fsk">2</rosparam>
+			<rosparam param="timeout">3000</rosparam>
+			<remap from="ss_calc" to="SSCalc" />
+			<remap from="receive_buffer" to="APPLICON_INBOX" />
+			<remap from="send_buffer" to="APPLICON_OUTBOX" />
+		</node>
+
+		<node name="coordinate_converter" pkg="tut_arrows" type="coordinate_converter" output="screen" respawn="false">
+			<rosparam param="beacons">
+              "1": {latitude: 59.223484, longitude: 24.226842, depth: 1.0}
+              "3": {latitude: 59.223237, longitude: 24.226797, depth: 1.0}
+            </rosparam>
+            <rosparam param="input">
+              latitude: 59.223370
+              longitude: 24.226850
+              depth: 1.0
+            </rosparam>
+            <remap from="coordinates_input" to="/latlonalt" />
+            <remap from="gps_input" to="fix" />
+		</node>
+
+	             <node name="MotionEstimator" pkg="tut_arrows" type="MotionEstimator" output="screen" respawn="true">
+                        <remap from="wrench" to="force_req" />
+                        <remap from="imu" to="hw/imu" />
+                        <remap from="fluid_pressure" to="hw/pressure" />
+                        <remap from="beacon" to="hw/beaconReceiver" />
+
+                        <param name="rate" value="10" />
+
+                        <param name="mass" value="19" />
+
+                        <param name="force_x_coef" value="0.4" />
+                        <param name="force_y_coef" value="0.4" />
+                        <param name="torque_z_coef" value="0.8" />
+
+                        <param name="measurementVariance" value="0.4" />
+                        <param name="rangeMeasurementVariance" value="1.0" />
+                        <param name="likelihoodThreshold" value="0.2" />
+                        <param name="doubleRangeMeasurementTimeout" value="30.0" />
+
+                        <param name="alfa1" value="1.0" />
+                        <param name="alfa2" value="0.2" />
+                        <param name="alfa3" value="0.2" />
+                        <param name="alfa4" value="1.0" />
+		</node>
+
+		<node name="ModemPositionPublisher" pkg="tut_arrows" type="ModemPositionPublisher" output="screen" respawn="true">
+			<remap from="send_buffer" to="APPLICON_OUTBOX" />
+		</node>
+
+	</group>
+	
+</launch>

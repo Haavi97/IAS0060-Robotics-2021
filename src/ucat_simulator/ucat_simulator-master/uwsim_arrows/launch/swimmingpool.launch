@@ -1,0 +1,6 @@
+<launch>
+	<arg name="uwsim_params" default="" />
+	<node name="simulation" pkg="uwsim" type="uwsim_binary" output="screen"
+		required="true"
+		args="--dataPath $(find uwsim_arrows)/data --configfile $(find uwsim_arrows)/data/scenes/swimmingpool.xml $(arg uwsim_params)" />
+</launch>
