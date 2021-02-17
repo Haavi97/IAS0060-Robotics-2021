@@ -16,6 +16,13 @@ from sensor_msgs.msg import Image, FluidPressure
 from tut_arrows_msgs.msg import FlippersModeCmd, BeaconPing
 from sensor_msgs.msg import Imu
 from std_msgs.msg import String
+from std_msgs.msg import Float32
+
+
+desiredDepth = 9
+Kp = 6
+D = 10
+I = 1
 
 
 class CameraBasedControl:
@@ -39,6 +46,9 @@ class CameraBasedControl:
         self.mode.mode = "FAST"  # Fins configuration ("FAST", "SLOW")
         self.wrench_mode_pub = rospy.Publisher(
             "force_mode", FlippersModeCmd, queue_size=25)  # Mode selection publisher
+
+        self.error_msg = Float32()
+        self.error_pub = rospy.Publisher("depth_error", Float32, queue_size=10)
 
         self.rpy_sub = rospy.Subscriber("rpy", Vector3, self.imuCallback)
 
@@ -67,11 +77,6 @@ class CameraBasedControl:
     # Main loop
 
     def step(self):
-        desiredDepth = 9
-        Kp = 6
-        D = 10
-        I = 1
-
         self.error[2] = self.depth - desiredDepth
 
         e1 = self.error
@@ -86,7 +91,10 @@ class CameraBasedControl:
 
         self.count += 1
         if(self.count % 200 == 0):
-            print("RMS: {:.5f}".format(np.sqrt(np.mean(self.rmsQueue**2))))
+            rms = np.sqrt(np.mean(self.rmsQueue**2))
+            rospy.loginfo("RMS: {:.5f}".format(rms))
+            self.error_msg.data = rms
+            self.error_pub.publish(self.error_msg)
 
         # Forces to apply : U = [surge, sway, heave, roll, pitch, yaw]
         # ===================================================================
@@ -114,7 +122,7 @@ class CameraBasedControl:
 
 
 if __name__ == '__main__':
-
+    rospy.sleep(2)
     rospy.init_node("CameraBasedControl")
     mbc = CameraBasedControl(0.2)  # (dt)
     mbc.run()
