@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+from __future__ import print_function
 """
 @author: Walid REMMAS
 @contact: remmas.walid@gmail.com
@@ -157,7 +157,7 @@ class CameraBasedControl:
                 self.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             c = max(self.contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
-            center, radius = cv2.minEnclosingCircle(c)
+            print('Ball found at: (x,y) = ({},{})'.format(x,y), end='\r')
             cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
             cv2.drawContours(cv_image, self.contours[1], -1, (0, 255, 0), 3)
             self.showContours(cv_image)
