@@ -1,7 +1,10 @@
 /*
  *  Created on: Dec 11, 2013
- *      Author: yury
+ *  Author: yury
+ *  Modification : Walid REMMAS
+ *  remmas.walid@gmail.com
  */
+
 #include "tut_arrows/WrenchDriver.h"
 #include <map>
 #include <cmath>
@@ -52,7 +55,7 @@ namespace
 	const float DIAGONAL_PHASE_OFFSETS[NUM_OF_MOTORS] = { M_PI, 0, 0, -M_PI };
 
 	/// Normalize angle to range [-PI ... PI].
-	///
+	//
 	float normalizeAngle(float angle)
 	{
 		float x = fmod(angle + M_PI, 2.0 * M_PI);
@@ -98,11 +101,6 @@ WrenchDriver::WrenchDriver()
 	nhPrivate.getParam("use_fast_v2", useFastV2_);
 
 	nhPrivate.getParam("mode_change_time", modeChangeTime_);
-	
-	// to set on mode fast :
-	// =============================================================================================================
-	// catkin_make -DCATKIN_BLACKLIST_PACKAGES="chameleon; tut_arrows_drivers"
-	modeCmd_.mode = tut_arrows_msgs::FlippersModeCmd::MODE_FAST;
 
 	sub_force_req = nh_.subscribe("force_req", 1, &WrenchDriver::ProcessWrenchStamped, this);
 	sub_mode = nh_.subscribe("force_mode", 1, &WrenchDriver::ProcessModeCmd, this);
@@ -146,8 +144,8 @@ void WrenchDriver::setMode(const tut_arrows_msgs::FlippersModeCmd& modeCmd)
 		moveSlow(0, 0, 0, 0, 0, 0);
 	}
 
-	//modeChangeTime_ = modeCmd.mode_change_time;
-	//lastModeChangeTime_ = ros::Time::now();
+	modeChangeTime_ = modeCmd.mode_change_time;
+	lastModeChangeTime_ = ros::Time::now();
 }
 
 void WrenchDriver::setFrequency(float frequency)
@@ -177,7 +175,7 @@ float WrenchDriver::forceToAmplitude(float force) const
     float f = 1.1 ; //frequency
  
     
-   if (abs(force) < 0.00f)
+   if (fabs(force) < 0.01f)
 	{
 		return 0.0;
 	}
@@ -187,19 +185,19 @@ float WrenchDriver::forceToAmplitude(float force) const
 	{	
 		
 		f=2.1;
-		Cdrot = 0.1 ;
-		force = std::min(abs(force), abs(5.0f));
+		Cdrot = 0.15 ;
+		force = std::min(fabs(force), fabs(5.0f));
 		//std::cout<<"abs(Force) = "<<force<<std::endl;
 		//std::cout<<"returned Amplitude = "<<(180/M_PI) * acos(-force/(8*density*Cdrot*At*rc*rc*M_PI*M_PI*f*f)+1)<<std::endl;		
-		return acos(-force/(8*density*Cdrot*At*rc*rc*M_PI*M_PI*f*f)+1) ;
+		return acos(-fabs(force)/(8*density*Cdrot*At*rc*rc*M_PI*M_PI*f*f)+1) ;
 		
 	}
 	
 	else if (modeCmd_.mode == tut_arrows_msgs::FlippersModeCmd::MODE_SLOW)
 	{
 		f=1.1;
-		Cdrot = 0.25;
-		force = std::min(abs(force), abs(5.0f));
+		Cdrot = 0.15;
+		force = std::min(fabs(force), fabs(5.0f));
 		/*
 		std::cout<<"Force = "<<force<<std::endl;
 		std::cout<<"abs(Force) = "<<force<<std::endl;
@@ -207,7 +205,7 @@ float WrenchDriver::forceToAmplitude(float force) const
 				
 		std::cout<<"returned Amplitude = "<<acos(-force/(8*density*Cdrot*At*rc*rc*M_PI*M_PI*f*f)+1)<<std::endl;
 		*/
-		return acos(-force/(8*density*Cdrot*At*rc*rc*M_PI*M_PI*f*f)+1) ;
+		return acos(-fabs(force)/(8*density*Cdrot*At*rc*rc*M_PI*M_PI*f*f)+1) ;
 		
 	}
 	
@@ -492,47 +490,47 @@ void WrenchDriver::moveSlow(double fx, double fy, double fz, double fRoll, doubl
 //----------------------------------------
 	if (fx > 0)
 	{
-		front_right += fx/2;
-		front_left += fx/2;
+		front_right += fabs(fx/2.0);
+		front_left += fabs(fx/2.0);
 	}
 	else if (fx < 0)
 	{
-		back_right += fx/2;
-		back_left += fx/2;
+		back_right += fabs(fx/2.0);
+		back_left += fabs(fx/2.0);
 	}
 //----------------------------------------	
 // SWAY AMPLITUDE ADDITION	
 //----------------------------------------
 	if (fy > 0)
 	{
-		front_right += fy/2;
-		back_right += fy/2;
+		front_right += fabs(fy/2.0);
+		back_right += fabs(fy/2.0);
 	}
 	else if (fy < 0)
 	{
-		back_left += fy/2;
-		front_left += fy/2;
+		back_left += fabs(fy/2.0);
+		front_left += fabs(fy/2.0);
 	}
 //----------------------------------------	
 // HEAVE AMPLITUDE ADDITION	
 //----------------------------------------
-	front_right += fz/4.0;
-	back_right += fz/4.0;
-	back_left += fz/4.0;
-	front_left += fz/4.0;	
+	front_right += fabs(fz/4.0);
+	back_right += fabs(fz/4.0);
+	back_left += fabs(fz/4.0);
+	front_left += fabs(fz/4.0);	
 
 //----------------------------------------
 // YAW AMPLITUDE ADDITION
 //----------------------------------------
     if (fYaw >= 0.05)
 	{
-		front_right += fYaw/2.0;
-		back_left += fYaw/2.0;
+		front_right += fabs(fYaw/2.0);
+		back_left += fabs(fYaw/2.0);
 	}
     else if (fYaw <= -0.05)
 	{
-		front_left += fYaw/2.0;
-		back_right += fYaw/2.0;
+		front_left += fabs(fYaw/2.0);
+		back_right += fabs(fYaw/2.0);
 	}
 //----------------------------------------	
 
@@ -548,8 +546,8 @@ void WrenchDriver::moveSlow(double fx, double fy, double fz, double fRoll, doubl
 	float *UOD_Fx = new float[5]{VN_Fx, N_Fx, 0, P_Fx, VP_Fx};
     
     
-        const float VN_Fz = -1.5;
-	const float N_Fz = -0.4;
+        const float VN_Fz = -4;
+	const float N_Fz = -2;
         const float VP_Fz = -VN_Fz;
 	const float P_Fz = -N_Fz;
 	float *UOD_Fz = new float[5]{VN_Fz, N_Fz, 0, P_Fz, VP_Fz};
@@ -577,13 +575,26 @@ void WrenchDriver::moveSlow(double fx, double fy, double fz, double fRoll, doubl
         flippers[2].zeroDirection +=  finsdirection * MovementDirectionZ[2];
         flippers[3].zeroDirection +=  finsdirection * MovementDirectionZ[3];
     	
-	flippers[0].amplitude = front_right;
-	flippers[1].amplitude = back_right;
-	flippers[2].amplitude = back_left;
-	flippers[3].amplitude = front_left;
+	flippers[0].amplitude += front_right;
+	flippers[1].amplitude += back_right;
+	flippers[2].amplitude += back_left;
+	flippers[3].amplitude += front_left;
 	
+	/*
+	std::cout<<"Force flipper 0 = "<<flippers[0].amplitude<<std::endl;
+	std::cout<<"Force flipper 1 = "<<flippers[1].amplitude<<std::endl;
+	std::cout<<"Force flipper 2 = "<<flippers[2].amplitude<<std::endl;
+	std::cout<<"Force flipper 3 = "<<flippers[3].amplitude<<std::endl;
+	std::cout<<"------------------------------------------"<<std::endl;
+	*/
 	convertForcesToAmplitudes();
-	//limitAmplitudes();
+	/*
+	std::cout<<"Amplitude flipper 0 = "<<flippers[0].amplitude<<std::endl;
+	std::cout<<"Amplitude flipper 1 = "<<flippers[1].amplitude<<std::endl;
+	std::cout<<"Amplitude flipper 2 = "<<flippers[2].amplitude<<std::endl;
+	std::cout<<"Amplitude flipper 3 = "<<flippers[3].amplitude<<std::endl;
+	*/
+	limitAmplitudes();
 
 	pub_flippers.publish(flippersMsg_);
 }

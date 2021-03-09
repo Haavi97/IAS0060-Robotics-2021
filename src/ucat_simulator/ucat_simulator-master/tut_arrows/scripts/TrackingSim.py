@@ -38,6 +38,8 @@ class CameraBasedControl:
 
         self.rmsQueue = np.zeros(200)
         self.depthErrorQueue = np.zeros(5)
+        self.yawErrorQueue = np.zeros(5)
+        self.surgeErrorQueue = np.zeros(5)
 
         self.U = np.zeros(6)  # Force and Torque to be applied
 
@@ -46,7 +48,7 @@ class CameraBasedControl:
             "force_req", WrenchStamped, queue_size=10)  # Force and torque publisher
 
         self.mode = FlippersModeCmd()  # Mode selection
-        self.mode.mode = "FAST"  # Fins configuration ("FAST", "SLOW")
+        self.mode.mode = "SLOW"  # Fins configuration ("FAST", "SLOW")
         self.wrench_mode_pub = rospy.Publisher(
             "force_mode", FlippersModeCmd, queue_size=25)  # Mode selection publisher
 
@@ -81,6 +83,9 @@ class CameraBasedControl:
 
         self.contours = None
 
+        self.destCoordinates = None
+        self.radius = None
+
     # callback function of imu topic subscriber
 
     def imuCallback(self, imu_msg):
@@ -96,8 +101,6 @@ class CameraBasedControl:
     # Main loop
 
     def step(self):
-        self.error[2] = self.depth - desiredDepth
-
         e1 = self.error
         e2 = (self.error - self.lastError) / self.dt
         self.lastError = self.error
@@ -108,6 +111,12 @@ class CameraBasedControl:
         self.depthErrorQueue[:-1] = self.depthErrorQueue[1:]
         self.depthErrorQueue[-1] = self.error[2]
 
+        self.yawErrorQueue[:-1] = self.yawErrorQueue[1:]
+        self.yawErrorQueue[-1] = self.error[0]
+
+        self.surgeErrorQueue[:-1] = self.surgeErrorQueue[1:]
+        self.surgeErrorQueue[-1] = self.error[1]
+
         self.count += 1
         if(self.count % 200 == 0):
             rms = np.sqrt(np.mean(self.rmsQueue**2))
@@ -117,9 +126,9 @@ class CameraBasedControl:
 
         # Forces to apply : U = [surge, sway, heave, roll, pitch, yaw]
         # ===================================================================
-        yawU = 0
-        depthU = Kp * e1[2] + D * e2[2] + I * sum(self.depthErrorQueue)
-        surgeU = 0
+        yawU = 20 * e1[0] + 8 * e2[0] + 0.75 * sum(self.yawErrorQueue)
+        depthU = 8 * e1[2] + 6 * e2[2] + 0.05 * sum(self.depthErrorQueue)
+        surgeU = 10 * e1[1] + 20 * e2[1] + 10 * sum(self.surgeErrorQueue)
         self.U = [surgeU, 0, depthU, 0, 0, yawU]
         # ===================================================================
 
@@ -135,6 +144,8 @@ class CameraBasedControl:
         # Publishing force vector to fins wrench driver
         self.wrench_pub.publish(self.wrench_msg)
 
+        #rospy.sleep(0.2)
+
     def depthCallback(self, msg):
         pressure = msg.fluid_pressure
         self.depth = (pressure-101325)/(1000*9.81)
@@ -143,23 +154,39 @@ class CameraBasedControl:
         try:
             # converting the image into bgr format
             cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
-            self.image = cv_image  # Storing the image
+            (h, w) = cv_image.shape[:2]
+
+            self.destCoordinates = (w/2, h/2)
+
+            # Radius of circle
+            self.radius = 15
+            # Blue color in BGR
+            color = (255, 0, 0)
+            # Line thickness of 2 px
+            thickness = 2
+            self.image = cv2.circle(
+                cv_image, self.destCoordinates, self.radius, color, thickness)  # Storing the image
             self.showImage(self.image)  # Calling function to display the image
 
             # Object detection:
             frame_HSV = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
             self.mask = cv2.inRange(frame_HSV, self.red_low, self.red_up)
 
-            self.showMask(self.mask)
+            #self.showMask(self.mask)
 
             # Contours
             _, self.contours, _ = cv2.findContours(
                 self.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             c = max(self.contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
-            print('Ball found at: (x,y) = ({},{})'.format(x,y), end='\r')
+
+            self.error[0] = self.destCoordinates[0] - x
+            self.error[2] = self.destCoordinates[1] - y
+            self.error[1] = self.radius - w/2
+            print('Ball found at: (x,y) = ({},{}), dest coordinates: (x, y) = ({}, {}), dest radius: {}, actual radius: {} error: {}'.format(
+                x, y, self.destCoordinates[0], self.destCoordinates[1],self.radius, w/2, self.error), end='\r')
             cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
-            cv2.drawContours(cv_image, self.contours[1], -1, (0, 255, 0), 3)
+            cv2.drawContours(cv_image, self.contours[0], -1, (0, 255, 0), 3)
             self.showContours(cv_image)
         except CvBridgeError as e:
             print(e)
