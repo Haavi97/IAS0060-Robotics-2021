@@ -23,9 +23,17 @@ from std_msgs.msg import Float32
 
 
 desiredDepth = 9
-Kp = 6
-D = 10
-I = 1
+# 0 -> yax (x)
+# 1 -> surge (radius, forward)
+# 2 -> heave (depth)
+Kp = [200, 10, 10]
+D = [80, 1, 4]
+I = [7.5, 0.01, 0.1]
+sigma = 50
+sigma_2 = sigma**2
+surge_sigma = 5
+surge_sigma_2 = surge_sigma**2
+max_error_queue = 5
 
 
 class CameraBasedControl:
@@ -37,9 +45,9 @@ class CameraBasedControl:
         self.lastError = np.array([0, 0, 0])  # Tracking error at time t-1
 
         self.rmsQueue = np.zeros(200)
-        self.depthErrorQueue = np.zeros(5)
-        self.yawErrorQueue = np.zeros(5)
-        self.surgeErrorQueue = np.zeros(5)
+        self.depthErrorQueue = np.zeros(max_error_queue)
+        self.yawErrorQueue = np.zeros(max_error_queue)
+        self.surgeErrorQueue = np.zeros(max_error_queue)
 
         self.U = np.zeros(6)  # Force and Torque to be applied
 
@@ -51,9 +59,17 @@ class CameraBasedControl:
         self.mode.mode = "SLOW"  # Fins configuration ("FAST", "SLOW")
         self.wrench_mode_pub = rospy.Publisher(
             "force_mode", FlippersModeCmd, queue_size=25)  # Mode selection publisher
+        self.wrench_mode_pub.publish(self.mode)
 
-        self.error_msg = Float32()
-        self.error_pub = rospy.Publisher("depth_error", Float32, queue_size=10)
+        self.yaw_error_msg = Float32()
+        self.surge_error_msg = Float32()
+        self.heave_error_msg = Float32()
+        self.yaw_error_pub = rospy.Publisher(
+            "/yaw_error", Float32, queue_size=10)
+        self.surge_error_pub = rospy.Publisher(
+            "/surge_error", Float32, queue_size=10)
+        self.heave_error_pub = rospy.Publisher(
+            "/heave_error", Float32, queue_size=10)
 
         self.rpy_sub = rospy.Subscriber("rpy", Vector3, self.imuCallback)
 
@@ -84,7 +100,9 @@ class CameraBasedControl:
         self.contours = None
 
         self.destCoordinates = None
-        self.radius = None
+        # Radius of dest circle
+        self.radius = 15
+        self.x, self.y, self.w = None, None, None
 
     # callback function of imu topic subscriber
 
@@ -124,11 +142,29 @@ class CameraBasedControl:
             self.error_msg.data = rms
             self.error_pub.publish(self.error_msg)
 
+        pSurge = np.exp(-(e1[0]**2 + e1[1]**2)/(2*surge_sigma_2))
+        pDepth = np.exp(-(e1[0]**2)/(2*sigma_2))
+        pYaw = 1 - pDepth
+
+        # px = 1
+        # py = 1
+        # pp = 1
+
+        if self.x != None:
+            print('(x,y) = ({},{})->(x, y) = ({}, {}), r: {}->r: {} error: {}, pYaw,pDepth,pSurge:{},{},{}'.format(
+                self.x, self.y,
+                self.destCoordinates[0], self.destCoordinates[1],
+                self.radius, self.w/2,
+                self.error, pYaw, pDepth, pSurge), end='\r')
+
         # Forces to apply : U = [surge, sway, heave, roll, pitch, yaw]
         # ===================================================================
-        yawU = 20 * e1[0] + 8 * e2[0] + 0.75 * sum(self.yawErrorQueue)
-        depthU = 8 * e1[2] + 6 * e2[2] + 0.05 * sum(self.depthErrorQueue)
-        surgeU = 10 * e1[1] + 20 * e2[1] + 10 * sum(self.surgeErrorQueue)
+        yawU = pYaw * (Kp[0] * e1[0] + D[0] * e2[0] +
+                       I[0] * sum(self.yawErrorQueue))
+        surgeU = pSurge * (Kp[1] * e1[1] + D[1] * e2[1] +
+                           I[1] * sum(self.surgeErrorQueue))
+        depthU = pDepth * (Kp[2] * e1[2] + D[2] * e2[2] +
+                           I[2] * sum(self.depthErrorQueue))
         self.U = [surgeU, 0, depthU, 0, 0, yawU]
         # ===================================================================
 
@@ -141,10 +177,15 @@ class CameraBasedControl:
         self.wrench_msg.wrench.torque.y = self.U[4]
         self.wrench_msg.wrench.torque.z = self.U[5]
 
+        self.yaw_error_msg.data = e1[0]
+        self.surge_error_msg.data = e1[1]
+        self.heave_error_msg.data = e1[2]
+
         # Publishing force vector to fins wrench driver
         self.wrench_pub.publish(self.wrench_msg)
-
-        #rospy.sleep(0.2)
+        self.yaw_error_pub.publish(self.yaw_error_msg)
+        self.surge_error_pub.publish(self.surge_error_msg)
+        self.heave_error_pub.publish(self.heave_error_msg)
 
     def depthCallback(self, msg):
         pressure = msg.fluid_pressure
@@ -158,8 +199,6 @@ class CameraBasedControl:
 
             self.destCoordinates = (w/2, h/2)
 
-            # Radius of circle
-            self.radius = 15
             # Blue color in BGR
             color = (255, 0, 0)
             # Line thickness of 2 px
@@ -172,7 +211,7 @@ class CameraBasedControl:
             frame_HSV = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
             self.mask = cv2.inRange(frame_HSV, self.red_low, self.red_up)
 
-            #self.showMask(self.mask)
+            # self.showMask(self.mask)
 
             # Contours
             _, self.contours, _ = cv2.findContours(
@@ -180,16 +219,19 @@ class CameraBasedControl:
             c = max(self.contours, key=cv2.contourArea)
             x, y, w, h = cv2.boundingRect(c)
 
-            self.error[0] = self.destCoordinates[0] - x
-            self.error[2] = self.destCoordinates[1] - y
+            self.error[0] = self.destCoordinates[0] - x - w/2
             self.error[1] = self.radius - w/2
-            print('Ball found at: (x,y) = ({},{}), dest coordinates: (x, y) = ({}, {}), dest radius: {}, actual radius: {} error: {}'.format(
-                x, y, self.destCoordinates[0], self.destCoordinates[1],self.radius, w/2, self.error), end='\r')
+            self.error[2] = self.destCoordinates[1] - y - w/2
+            # print('Ball found at: (x,y) = ({},{}), dest coordinates: (x, y) = ({}, {}), dest radius: {}, actual radius: {} error: {}'.format(
+            #     x, y, self.destCoordinates[0], self.destCoordinates[1], self.radius, w/2, self.error), end='\r')
             cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
             cv2.drawContours(cv_image, self.contours[0], -1, (0, 255, 0), 3)
             self.showContours(cv_image)
+            self.x, self.y, self.w = x, y, w
         except CvBridgeError as e:
             print(e)
+        except:
+            print('Out of camera scope', end='\r')
 
     def showImage(self, image):
         # Had to change this line. Probably is better to put a try/except statement
