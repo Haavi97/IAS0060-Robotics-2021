@@ -26,9 +26,9 @@ desiredDepth = 9
 # 0 -> yax (x)
 # 1 -> surge (radius, forward)
 # 2 -> heave (depth)
-Kp = [200, 10, 10]
-D = [80, 1, 4]
-I = [7.5, 0.01, 0.1]
+Kp = [2, 10, 10] # [0,0,0]#
+D = [0.8, 1, 4]
+I = [0.075, 0.01, 0.1]
 sigma = 50
 sigma_2 = sigma**2
 surge_sigma = 5

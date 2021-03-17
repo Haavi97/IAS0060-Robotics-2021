@@ -14,15 +14,24 @@
 		<node name="QuatToEulerNode" pkg="tut_arrows" type="QuatToEulerNode.py" output="screen" respawn="true">
 		</node>
 
-		<arg name="node_start_delay" default="1.0" />  
-
-		<node name="error_plots"
-        pkg="rqt_plot"
-        type="rqt_plot"
-        args="/yaw_error /surge_error /heave_error"
-		launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " />
-
 	</group>
+
+	<arg name="node_start_delay" default="1.0" />  
+
+	<node name="error_plots"
+	pkg="rqt_plot"
+	type="rqt_plot"
+	args="/yaw_error /surge_error /heave_error"
+	launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " />
+
+	<node name="MovingObject" pkg="uwsim" type="spawnObject" output="screen" respawn="true">
+	</node>
 	
+    <arg name = "bag_directory" default="$(find tut_arrows)/bags/" />
+    <arg name = "filename" default="errors.bag" />
+
+    <node pkg="rosbag" type="record" name="recorder" output="screen" args="-o -O $(arg bag_directory)$(arg filename) /yaw_error /surge_error /heave_error --duration=30"/>
+
+
 	
 </launch>
