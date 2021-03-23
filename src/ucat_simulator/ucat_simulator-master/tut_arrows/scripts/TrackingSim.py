@@ -26,14 +26,21 @@ desiredDepth = 9
 # 0 -> yax (x)
 # 1 -> surge (radius, forward)
 # 2 -> heave (depth)
-Kp = [2, 10, 10] # [0,0,0]#
-D = [0.8, 1, 4]
-I = [0.075, 0.01, 0.1]
+Kp = [0.007, 0.35, 0.01]
+D = [0, 0, 0]
+I = [0.0001, 0.005, 0]
+THRESHOLD = 10 # 0%
+
 sigma = 50
 sigma_2 = sigma**2
 surge_sigma = 5
 surge_sigma_2 = surge_sigma**2
 max_error_queue = 5
+
+# Blue color in BGR
+color = (255, 0, 0)
+# Line thickness of 2 px
+thickness = 2
 
 
 class CameraBasedControl:
@@ -101,8 +108,8 @@ class CameraBasedControl:
 
         self.destCoordinates = None
         # Radius of dest circle
-        self.radius = 15
-        self.x, self.y, self.w = None, None, None
+        self.radius = 25
+        self.x, self.y, self.r = None, None, None
 
     # callback function of imu topic subscriber
 
@@ -135,28 +142,42 @@ class CameraBasedControl:
         self.surgeErrorQueue[:-1] = self.surgeErrorQueue[1:]
         self.surgeErrorQueue[-1] = self.error[1]
 
-        self.count += 1
-        if(self.count % 200 == 0):
-            rms = np.sqrt(np.mean(self.rmsQueue**2))
-            rospy.loginfo("RMS: {:.5f}".format(rms))
-            self.error_msg.data = rms
-            self.error_pub.publish(self.error_msg)
+        # self.count += 1
+        # if(self.count % 200 == 0):
+        #     rms = np.sqrt(np.mean(self.rmsQueue**2))
+        #     rospy.loginfo("RMS: {:.5f}".format(rms))
+        #     self.error_msg.data = rms
+        #     self.error_pub.publish(self.error_msg)
 
-        pSurge = np.exp(-(e1[0]**2 + e1[1]**2)/(2*surge_sigma_2))
-        pDepth = np.exp(-(e1[0]**2)/(2*sigma_2))
-        pYaw = 1 - pDepth
+        # pSurge = np.exp(-(e1[0]**2 + e1[1]**2)/(2*surge_sigma_2))
+        # pDepth = np.exp(-(e1[0]**2)/(2*sigma_2))
+        # pYaw = 1 - pDepth
 
-        # px = 1
-        # py = 1
-        # pp = 1
+        pYaw = 1
+        pSurge = 1
+        pDepth = 1
 
         if self.x != None:
             print('(x,y) = ({},{})->(x, y) = ({}, {}), r: {}->r: {} error: {}, pYaw,pDepth,pSurge:{},{},{}'.format(
                 self.x, self.y,
                 self.destCoordinates[0], self.destCoordinates[1],
-                self.radius, self.w/2,
+                self.radius, self.r,
                 self.error, pYaw, pDepth, pSurge), end='\r')
 
+        # self.error[0] = 0 if abs(self.error[0]) < THRESHOLD else self.error[0]
+        # self.error[1] = 0 if abs(self.error[1]) < THRESHOLD else self.error[1]
+        # self.error[2] = 0 if abs(self.error[2]) < THRESHOLD else self.error[2]
+
+        if abs(self.error[0]) > abs(self.error[1]) and abs(self.error[0]) > abs(self.error[2]):
+            pSurge = 0
+            pDepth = 0
+        elif abs(self.error[1]) > abs(self.error[0]) and abs(self.error[1]) > abs(self.error[2]):
+            pYaw = 0
+            pDepth = 0
+        else:
+            pYaw = 0
+            pSurge = 0
+        
         # Forces to apply : U = [surge, sway, heave, roll, pitch, yaw]
         # ===================================================================
         yawU = pYaw * (Kp[0] * e1[0] + D[0] * e2[0] +
@@ -197,19 +218,18 @@ class CameraBasedControl:
             cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
             (h, w) = cv_image.shape[:2]
 
+
             self.destCoordinates = (w/2, h/2)
 
-            # Blue color in BGR
-            color = (255, 0, 0)
-            # Line thickness of 2 px
-            thickness = 2
-            self.image = cv2.circle(
-                cv_image, self.destCoordinates, self.radius, color, thickness)  # Storing the image
-            self.showImage(self.image)  # Calling function to display the image
+            # self.showImage(self.image)  # Calling function to display the image
 
             # Object detection:
             frame_HSV = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
             self.mask = cv2.inRange(frame_HSV, self.red_low, self.red_up)
+
+            # Destination circle after mask not to mess with the colors
+            self.image = cv2.circle(
+                cv_image, self.destCoordinates, self.radius, color, thickness)  # Storing the image
 
             # self.showMask(self.mask)
 
@@ -217,21 +237,22 @@ class CameraBasedControl:
             _, self.contours, _ = cv2.findContours(
                 self.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             c = max(self.contours, key=cv2.contourArea)
-            x, y, w, h = cv2.boundingRect(c)
+            (x,y), radius = cv2.minEnclosingCircle(c)
+            center = (int(x),int(y))
+            radius = int(radius)
 
-            self.error[0] = self.destCoordinates[0] - x - w/2
-            self.error[1] = self.radius - w/2
-            self.error[2] = self.destCoordinates[1] - y - w/2
-            # print('Ball found at: (x,y) = ({},{}), dest coordinates: (x, y) = ({}, {}), dest radius: {}, actual radius: {} error: {}'.format(
-            #     x, y, self.destCoordinates[0], self.destCoordinates[1], self.radius, w/2, self.error), end='\r')
-            cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            self.error[0] = (100*(self.destCoordinates[0] - center[0]))/self.destCoordinates[0]
+            self.error[1] = (100*(self.radius - radius))/int(float(self.radius)*1)
+            self.error[2] = (100*(self.destCoordinates[1] - center[1]))/self.destCoordinates[1]
+            
+            cv2.circle(cv_image, center, radius, (255, 0, 0), thickness)
             cv2.drawContours(cv_image, self.contours[0], -1, (0, 255, 0), 3)
             self.showContours(cv_image)
-            self.x, self.y, self.w = x, y, w
+            self.x, self.y, self.r = center[0], center[1], radius
         except CvBridgeError as e:
             print(e)
         except:
-            print('Out of camera scope', end='\r')
+            print('Out of camera scope' +' '*100, end='\r')
 
     def showImage(self, image):
         # Had to change this line. Probably is better to put a try/except statement
