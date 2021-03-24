@@ -29,10 +29,11 @@ desiredDepth = 9
 # 2 -> heave (depth)
 Kp = [0.007, 0.1, 0.01]
 D = [0, 0, 0]
-I = [0.0001, 0, 0]
+I = [0.0001, 0, 0.001]
 THRESHOLD = 10 # 10%
-THRESHOLD_RADIUS = 10 # 10%
-RADIUS_FACTOR = 1
+THRESHOLD_RADIUS = 20 # 20%
+THRESHOLD_DEPTH = 10 # 10%
+RADIUS_FACTOR = 1.35
 radius_correction = 1
 
 sigma = 50
@@ -172,7 +173,7 @@ class CameraBasedControl:
 
         e1[0] = 0 if abs(self.error[0]) < THRESHOLD else self.error[0]
         e1[1] = 0 if abs(self.error[1]) < THRESHOLD_RADIUS else self.error[1]
-        e1[2] = 0 if abs(self.error[2]) < THRESHOLD else self.error[2]
+        e1[2] = 0 if abs(self.error[2]) < THRESHOLD_DEPTH else self.error[2]
 
         factor = 1
         if self.error[2] < 0:
