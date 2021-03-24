@@ -9,6 +9,7 @@ from __future__ import print_function
 import rospy
 import cv2    # This imports openCV library
 import numpy as np
+import copy as cp
 
 
 from cv_bridge import CvBridge, CvBridgeError  # This imports CvBridge
@@ -26,10 +27,13 @@ desiredDepth = 9
 # 0 -> yax (x)
 # 1 -> surge (radius, forward)
 # 2 -> heave (depth)
-Kp = [0.007, 0.35, 0.01]
+Kp = [0.007, 0.1, 0.01]
 D = [0, 0, 0]
-I = [0.0001, 0.005, 0]
-THRESHOLD = 10 # 0%
+I = [0.0001, 0, 0]
+THRESHOLD = 10 # 10%
+THRESHOLD_RADIUS = 10 # 10%
+RADIUS_FACTOR = 1
+radius_correction = 1
 
 sigma = 50
 sigma_2 = sigma**2
@@ -71,12 +75,21 @@ class CameraBasedControl:
         self.yaw_error_msg = Float32()
         self.surge_error_msg = Float32()
         self.heave_error_msg = Float32()
+        self.pyaw_msg = Float32()
+        self.psurge_msg = Float32()
+        self.pdepth_msg = Float32()
         self.yaw_error_pub = rospy.Publisher(
             "/yaw_error", Float32, queue_size=10)
         self.surge_error_pub = rospy.Publisher(
             "/surge_error", Float32, queue_size=10)
         self.heave_error_pub = rospy.Publisher(
             "/heave_error", Float32, queue_size=10)
+        self.pyaw_error_pub = rospy.Publisher(
+            "/pyaw_error", Float32, queue_size=10)
+        self.psurge_error_pub = rospy.Publisher(
+            "/psurge_error", Float32, queue_size=10)
+        self.pdepth_error_pub = rospy.Publisher(
+            "/pdepth_error", Float32, queue_size=10)
 
         self.rpy_sub = rospy.Subscriber("rpy", Vector3, self.imuCallback)
 
@@ -108,7 +121,7 @@ class CameraBasedControl:
 
         self.destCoordinates = None
         # Radius of dest circle
-        self.radius = 25
+        self.radius = 15
         self.x, self.y, self.r = None, None, None
 
     # callback function of imu topic subscriber
@@ -126,9 +139,9 @@ class CameraBasedControl:
     # Main loop
 
     def step(self):
-        e1 = self.error
+        e1 = cp.deepcopy(self.error)
         e2 = (self.error - self.lastError) / self.dt
-        self.lastError = self.error
+        self.lastError = cp.deepcopy(self.error)
 
         self.rmsQueue[:-1] = self.rmsQueue[1:]
         self.rmsQueue[-1] = self.error[2]
@@ -157,26 +170,29 @@ class CameraBasedControl:
         pSurge = 1
         pDepth = 1
 
-        if self.x != None:
-            print('(x,y) = ({},{})->(x, y) = ({}, {}), r: {}->r: {} error: {}, pYaw,pDepth,pSurge:{},{},{}'.format(
-                self.x, self.y,
-                self.destCoordinates[0], self.destCoordinates[1],
-                self.radius, self.r,
-                self.error, pYaw, pDepth, pSurge), end='\r')
+        e1[0] = 0 if abs(self.error[0]) < THRESHOLD else self.error[0]
+        e1[1] = 0 if abs(self.error[1]) < THRESHOLD_RADIUS else self.error[1]
+        e1[2] = 0 if abs(self.error[2]) < THRESHOLD else self.error[2]
 
-        # self.error[0] = 0 if abs(self.error[0]) < THRESHOLD else self.error[0]
-        # self.error[1] = 0 if abs(self.error[1]) < THRESHOLD else self.error[1]
-        # self.error[2] = 0 if abs(self.error[2]) < THRESHOLD else self.error[2]
-
-        if abs(self.error[0]) > abs(self.error[1]) and abs(self.error[0]) > abs(self.error[2]):
+        factor = 1
+        if self.error[2] < 0:
+            factor = radius_correction
+        if (abs(self.error[0]) >= abs(self.error[1])) and (abs(self.error[0]) >= abs(self.error[2]*factor)):
             pSurge = 0
             pDepth = 0
-        elif abs(self.error[1]) > abs(self.error[0]) and abs(self.error[1]) > abs(self.error[2]):
+        elif (abs(self.error[1]*factor) >= abs(self.error[0])) and (abs(self.error[1]*factor) >= abs(self.error[2])):
             pYaw = 0
             pDepth = 0
         else:
             pYaw = 0
             pSurge = 0
+
+        if self.x != None:
+            print('(x,y) = ({},{})->(x, y) = ({}, {}), r: {}->r: {} error: {}, pYaw,pSurge,pDepth:{},{},{}'.format(
+                self.x, self.y,
+                self.destCoordinates[0], self.destCoordinates[1],
+                self.radius, self.r,
+                self.error, pYaw, pSurge, pDepth), end='\r')
         
         # Forces to apply : U = [surge, sway, heave, roll, pitch, yaw]
         # ===================================================================
@@ -198,15 +214,21 @@ class CameraBasedControl:
         self.wrench_msg.wrench.torque.y = self.U[4]
         self.wrench_msg.wrench.torque.z = self.U[5]
 
-        self.yaw_error_msg.data = e1[0]
-        self.surge_error_msg.data = e1[1]
-        self.heave_error_msg.data = e1[2]
+        self.yaw_error_msg.data = self.error[0]
+        self.surge_error_msg.data = self.error[1]
+        self.heave_error_msg.data = self.error[2]
+        self.pyaw_msg.data = pYaw*50
+        self.psurge_msg.data = pSurge*60
+        self.pdepth_msg.data = pDepth*70
 
         # Publishing force vector to fins wrench driver
         self.wrench_pub.publish(self.wrench_msg)
         self.yaw_error_pub.publish(self.yaw_error_msg)
         self.surge_error_pub.publish(self.surge_error_msg)
         self.heave_error_pub.publish(self.heave_error_msg)
+        self.pyaw_error_pub.publish(self.pyaw_msg)
+        self.psurge_error_pub.publish(self.psurge_msg)
+        self.pdepth_error_pub.publish(self.pdepth_msg)
 
     def depthCallback(self, msg):
         pressure = msg.fluid_pressure
@@ -242,7 +264,7 @@ class CameraBasedControl:
             radius = int(radius)
 
             self.error[0] = (100*(self.destCoordinates[0] - center[0]))/self.destCoordinates[0]
-            self.error[1] = (100*(self.radius - radius))/int(float(self.radius)*1)
+            self.error[1] = (100*(self.radius - radius))/int(float(self.radius)*RADIUS_FACTOR)
             self.error[2] = (100*(self.destCoordinates[1] - center[1]))/self.destCoordinates[1]
             
             cv2.circle(cv_image, center, radius, (255, 0, 0), thickness)

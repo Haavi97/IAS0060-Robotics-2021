@@ -7,3 +7,5 @@ install/
 src/arrows_hls/
 src/underwater_simulation/
 .catkin_tools/
+src/vision_opencv/
+src/vision_opencv/
