@@ -13,6 +13,7 @@ import copy as cp
 
 
 from cv_bridge import CvBridge, CvBridgeError  # This imports CvBridge
+from math import pi
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import WrenchStamped, Pose, Vector3Stamped, Twist, Point, Vector3
@@ -35,6 +36,10 @@ THRESHOLD_RADIUS = 20 # 20%
 THRESHOLD_DEPTH = 10 # 10%
 RADIUS_FACTOR = 1.35
 radius_correction = 1
+
+CLOSENESS_THRESHOLD = 20
+
+FAST_THRESHOLD = 50
 
 sigma = 50
 sigma_2 = sigma**2
@@ -117,13 +122,16 @@ class CameraBasedControl:
         self.mask = None
         self.red_low = np.array([170, 50, 10])
         self.red_up = np.array([180, 255, 255])
+        self.yellow_low = np.array([0,0,0])
+        self.yellow_up = np.array([60,255,255])
 
         self.contours = None
 
         self.destCoordinates = None
         # Radius of dest circle
-        self.radius = 15
+        self.radius = 35
         self.x, self.y, self.r = None, None, None
+        self.previous_x, self.previous_y = None, None
 
     # callback function of imu topic subscriber
 
@@ -187,6 +195,15 @@ class CameraBasedControl:
         else:
             pYaw = 0
             pSurge = 0
+        
+        if max(self.error) >= FAST_THRESHOLD and self.mode.mode != 'FAST':
+            self.mode.mode = "FAST"  # Fins configuration ("FAST", "SLOW")
+            self.wrench_mode_pub.publish(self.mode)
+            print('\nFAST')
+        elif self.mode.mode == 'FAST':
+            self.mode.mode = "SLOW"  # Fins configuration ("FAST", "SLOW")
+            self.wrench_mode_pub.publish(self.mode)
+            print('\nSLOW')
 
         if self.x != None:
             print('(x,y) = ({},{})->(x, y) = ({}, {}), r: {}->r: {} error: {}, pYaw,pSurge,pDepth:{},{},{}'.format(
@@ -248,7 +265,7 @@ class CameraBasedControl:
 
             # Object detection:
             frame_HSV = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-            self.mask = cv2.inRange(frame_HSV, self.red_low, self.red_up)
+            self.mask = cv2.inRange(frame_HSV, self.yellow_low, self.yellow_up)
 
             # Destination circle after mask not to mess with the colors
             self.image = cv2.circle(
@@ -260,9 +277,38 @@ class CameraBasedControl:
             _, self.contours, _ = cv2.findContours(
                 self.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             c = max(self.contours, key=cv2.contourArea)
+            
             (x,y), radius = cv2.minEnclosingCircle(c)
+
+            if self.previous_x != None:
+                p1 = (x-CLOSENESS_THRESHOLD) <= self.previous_x <= (x+CLOSENESS_THRESHOLD)
+                p2 = (y-CLOSENESS_THRESHOLD) <= self.previous_y <= (y+CLOSENESS_THRESHOLD)
+                if p1 and p2:
+                    self.previous_x, self.previous_y = x, y
+                else:
+                    max_p = (0,0,0)
+                    max_area = 0
+                    for cont in self.contours:
+                        (x1,y1), r1 = cv2.minEnclosingCircle(cont)
+                        area = r1*pi**2
+                        p1 = (x1-CLOSENESS_THRESHOLD) <= self.previous_x <= (x1+CLOSENESS_THRESHOLD)
+                        p2 = (y1-CLOSENESS_THRESHOLD) <= self.previous_y <= (y1+CLOSENESS_THRESHOLD)
+                        p3 = x1 != x
+                        p4 = y1 != y 
+                        if area > max_area and p1 and p2 and p3:
+                            max_p = x1,y1,r1
+                            max_area = area
+                    if max_p != (0,0,0):
+                        print(max_p)
+                        x,y,radius = max_p
+                        self.previous_x, self.previous_y = x, y
+            else:
+                c = max(self.contours, key=cv2.contourArea)
+                (x,y), radius = cv2.minEnclosingCircle(c)
+                self.previous_x, self.previous_y = x, y
             center = (int(x),int(y))
             radius = int(radius)
+
 
             self.error[0] = (100*(self.destCoordinates[0] - center[0]))/self.destCoordinates[0]
             self.error[1] = (100*(self.radius - radius))/int(float(self.radius)*RADIUS_FACTOR)
@@ -317,7 +363,7 @@ class CameraBasedControl:
 
 
 if __name__ == '__main__':
-    rospy.sleep(2)
+    # rospy.sleep(2)
     rospy.init_node("CameraBasedControl")
     mbc = CameraBasedControl(0.2)  # (dt)
     mbc.run()

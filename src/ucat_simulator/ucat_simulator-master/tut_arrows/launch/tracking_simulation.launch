@@ -32,8 +32,8 @@
     <node pkg="rosbag" type="record" 
 	name="recorder" output="screen" 
 	args="-O $(arg bag_directory)$(arg filename) /yaw_error /surge_error /heave_error /pyaw_error /psurge_error /pdepth_error --duration=45"/>
-<!-- 
+
 	<node name="MovingObject" pkg="uwsim" type="spawnObject" output="screen" respawn="true">
-	</node> -->
+	</node>
 	
 </launch>
