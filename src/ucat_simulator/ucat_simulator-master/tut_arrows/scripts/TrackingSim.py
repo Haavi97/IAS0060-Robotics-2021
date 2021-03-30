@@ -28,12 +28,12 @@ desiredDepth = 9
 # 0 -> yax (x)
 # 1 -> surge (radius, forward)
 # 2 -> heave (depth)
-Kp = [0.007, 0.1, 0.01]
+Kp = [0.007, 0.1, 0.007]
 D = [0, 0, 0]
-I = [0.0001, 0, 0.001]
-THRESHOLD = 10 # 10%
-THRESHOLD_RADIUS = 20 # 20%
-THRESHOLD_DEPTH = 10 # 10%
+I = [0.0001, 0, 0.002]
+THRESHOLD = 10  # 10%
+THRESHOLD_RADIUS = 20  # 20%
+THRESHOLD_DEPTH = 20  # 20%
 RADIUS_FACTOR = 1.35
 radius_correction = 1
 
@@ -122,8 +122,8 @@ class CameraBasedControl:
         self.mask = None
         self.red_low = np.array([170, 50, 10])
         self.red_up = np.array([180, 255, 255])
-        self.yellow_low = np.array([0,0,0])
-        self.yellow_up = np.array([60,255,255])
+        self.yellow_low = np.array([0, 0, 0])
+        self.yellow_up = np.array([60, 255, 255])
 
         self.contours = None
 
@@ -195,8 +195,8 @@ class CameraBasedControl:
         else:
             pYaw = 0
             pSurge = 0
-        
-        if max(self.error) >= FAST_THRESHOLD and self.mode.mode != 'FAST':
+
+        if max(self.error, key=abs) >= FAST_THRESHOLD and self.mode.mode != 'FAST':
             self.mode.mode = "FAST"  # Fins configuration ("FAST", "SLOW")
             self.wrench_mode_pub.publish(self.mode)
             print('\nFAST')
@@ -211,7 +211,7 @@ class CameraBasedControl:
                 self.destCoordinates[0], self.destCoordinates[1],
                 self.radius, self.r,
                 self.error, pYaw, pSurge, pDepth), end='\r')
-        
+
         # Forces to apply : U = [surge, sway, heave, roll, pitch, yaw]
         # ===================================================================
         yawU = pYaw * (Kp[0] * e1[0] + D[0] * e2[0] +
@@ -258,7 +258,6 @@ class CameraBasedControl:
             cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
             (h, w) = cv_image.shape[:2]
 
-
             self.destCoordinates = (w/2, h/2)
 
             # self.showImage(self.image)  # Calling function to display the image
@@ -277,43 +276,49 @@ class CameraBasedControl:
             _, self.contours, _ = cv2.findContours(
                 self.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             c = max(self.contours, key=cv2.contourArea)
-            
-            (x,y), radius = cv2.minEnclosingCircle(c)
+
+            (x, y), radius = cv2.minEnclosingCircle(c)
 
             if self.previous_x != None:
-                p1 = (x-CLOSENESS_THRESHOLD) <= self.previous_x <= (x+CLOSENESS_THRESHOLD)
-                p2 = (y-CLOSENESS_THRESHOLD) <= self.previous_y <= (y+CLOSENESS_THRESHOLD)
+                p1 = (x-CLOSENESS_THRESHOLD) <= self.previous_x <= (x +
+                                                                    CLOSENESS_THRESHOLD)
+                p2 = (y-CLOSENESS_THRESHOLD) <= self.previous_y <= (y +
+                                                                    CLOSENESS_THRESHOLD)
                 if p1 and p2:
                     self.previous_x, self.previous_y = x, y
                 else:
-                    max_p = (0,0,0)
+                    max_p = (0, 0, 0)
                     max_area = 0
                     for cont in self.contours:
-                        (x1,y1), r1 = cv2.minEnclosingCircle(cont)
+                        (x1, y1), r1 = cv2.minEnclosingCircle(cont)
                         area = r1*pi**2
-                        p1 = (x1-CLOSENESS_THRESHOLD) <= self.previous_x <= (x1+CLOSENESS_THRESHOLD)
-                        p2 = (y1-CLOSENESS_THRESHOLD) <= self.previous_y <= (y1+CLOSENESS_THRESHOLD)
+                        p1 = (
+                            x1-CLOSENESS_THRESHOLD) <= self.previous_x <= (x1+CLOSENESS_THRESHOLD)
+                        p2 = (
+                            y1-CLOSENESS_THRESHOLD) <= self.previous_y <= (y1+CLOSENESS_THRESHOLD)
                         p3 = x1 != x
-                        p4 = y1 != y 
+                        p4 = y1 != y
                         if area > max_area and p1 and p2 and p3:
-                            max_p = x1,y1,r1
+                            max_p = x1, y1, r1
                             max_area = area
-                    if max_p != (0,0,0):
+                    if max_p != (0, 0, 0):
                         print(max_p)
-                        x,y,radius = max_p
+                        x, y, radius = max_p
                         self.previous_x, self.previous_y = x, y
             else:
                 c = max(self.contours, key=cv2.contourArea)
-                (x,y), radius = cv2.minEnclosingCircle(c)
+                (x, y), radius = cv2.minEnclosingCircle(c)
                 self.previous_x, self.previous_y = x, y
-            center = (int(x),int(y))
+            center = (int(x), int(y))
             radius = int(radius)
 
+            self.error[0] = (100*(self.destCoordinates[0] -
+                                  center[0]))/self.destCoordinates[0]
+            self.error[1] = (100*(self.radius - radius)) / \
+                int(float(self.radius)*RADIUS_FACTOR)
+            self.error[2] = (100*(self.destCoordinates[1] -
+                                  center[1]))/self.destCoordinates[1]
 
-            self.error[0] = (100*(self.destCoordinates[0] - center[0]))/self.destCoordinates[0]
-            self.error[1] = (100*(self.radius - radius))/int(float(self.radius)*RADIUS_FACTOR)
-            self.error[2] = (100*(self.destCoordinates[1] - center[1]))/self.destCoordinates[1]
-            
             cv2.circle(cv_image, center, radius, (255, 0, 0), thickness)
             cv2.drawContours(cv_image, self.contours[0], -1, (0, 255, 0), 3)
             self.showContours(cv_image)
@@ -321,7 +326,7 @@ class CameraBasedControl:
         except CvBridgeError as e:
             print(e)
         except:
-            print('Out of camera scope' +' '*100, end='\r')
+            print('Out of camera scope' + ' '*100, end='\r')
 
     def showImage(self, image):
         # Had to change this line. Probably is better to put a try/except statement
