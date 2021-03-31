@@ -391,8 +391,8 @@
 			<name>floater</name>
 			<relativeTo>base_link</relativeTo>
 			<radius>0.15</radius>
-<!-- 			<mass>-10.5</mass> -->
-<!-- 			<mass>-9.5</mass> -->
+		<!-- 			<mass>-10.5</mass> -->
+		<!-- 			<mass>-9.5</mass> -->
 			<mass>-10</mass>
 			<mass>-10</mass>
 			<position>
@@ -667,6 +667,7 @@
 		<beaconReceiver>
 			<name>beaconReceiver</name>
 			<relativeTo>base_link</relativeTo>
+			<sensitiveTo>beacon</sensitiveTo>
 			<sensitiveTo>beacon1</sensitiveTo>
 			<sensitiveTo>beacon2</sensitiveTo>
 			<sensitiveTo>beacon3</sensitiveTo>

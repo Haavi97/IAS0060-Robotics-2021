@@ -28,10 +28,10 @@ desiredDepth = 9
 # 0 -> yax (x)
 # 1 -> surge (radius, forward)
 # 2 -> heave (depth)
-Kp = [0.007, 0.1, 0.007]
-D = [0, 0, 0]
-I = [0.0001, 0, 0.002]
-THRESHOLD = 10  # 10%
+Kp = [0.01, 0.1, 0.007]
+D = [0.002, 0, 0]
+I = [0, 0, 0.001]
+THRESHOLD = 1  # 10%
 THRESHOLD_RADIUS = 20  # 20%
 THRESHOLD_DEPTH = 20  # 20%
 RADIUS_FACTOR = 1.35
@@ -39,7 +39,7 @@ radius_correction = 1
 
 CLOSENESS_THRESHOLD = 20
 
-FAST_THRESHOLD = 50
+FAST_THRESHOLD = 100
 
 sigma = 50
 sigma_2 = sigma**2
@@ -49,6 +49,7 @@ max_error_queue = 5
 
 # Blue color in BGR
 color = (255, 0, 0)
+red = (0, 0, 255)
 # Line thickness of 2 px
 thickness = 2
 
@@ -102,6 +103,8 @@ class CameraBasedControl:
         self.pressure_sub = rospy.Subscriber("/ucat0/hw/pressure", FluidPressure,
                                              self.depthCallback)
 
+        self.relyaw_sub = rospy.Subscriber('/ucat0/hw/beaconReceiver', BeaconPing, self.beaconCallback)
+
         self.depth = 0  # depth of robot
         self.roll = 0  # roll angle of robot
         self.pitch = 0  # pitch angle of robot
@@ -129,9 +132,10 @@ class CameraBasedControl:
 
         self.destCoordinates = None
         # Radius of dest circle
-        self.radius = 35
+        self.radius = 15
         self.x, self.y, self.r = None, None, None
         self.previous_x, self.previous_y = None, None
+        self.h, self.w = 0, 0
 
     # callback function of imu topic subscriber
 
@@ -163,17 +167,6 @@ class CameraBasedControl:
 
         self.surgeErrorQueue[:-1] = self.surgeErrorQueue[1:]
         self.surgeErrorQueue[-1] = self.error[1]
-
-        # self.count += 1
-        # if(self.count % 200 == 0):
-        #     rms = np.sqrt(np.mean(self.rmsQueue**2))
-        #     rospy.loginfo("RMS: {:.5f}".format(rms))
-        #     self.error_msg.data = rms
-        #     self.error_pub.publish(self.error_msg)
-
-        # pSurge = np.exp(-(e1[0]**2 + e1[1]**2)/(2*surge_sigma_2))
-        # pDepth = np.exp(-(e1[0]**2)/(2*sigma_2))
-        # pYaw = 1 - pDepth
 
         pYaw = 1
         pSurge = 1
@@ -252,77 +245,87 @@ class CameraBasedControl:
         pressure = msg.fluid_pressure
         self.depth = (pressure-101325)/(1000*9.81)
 
+    def beaconCallback(self, data):
+        yawPix = self.radToPixels(data.relyaw)
+        if yawPix != 0:
+            self.error[0] = yawPix
+            self.error[1] = 0
+            self.error[2] = 0
+
+    def radToPixels(self, yaw):
+        return (self.w/2)*yaw/pi
+
     def onCamera(self, image):
         try:
             # converting the image into bgr format
             cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
-            (h, w) = cv_image.shape[:2]
+            (self.h, self.w) = cv_image.shape[:2]
 
-            self.destCoordinates = (w/2, h/2)
+            self.destCoordinates = (self.w/2, self.h/2)
+            self.yawCoordinates = (self.w/2 - self.error[0], self.h/2)
 
-            # self.showImage(self.image)  # Calling function to display the image
-
-            # Object detection:
-            frame_HSV = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-            self.mask = cv2.inRange(frame_HSV, self.yellow_low, self.yellow_up)
+            # # Object detection:
+            # frame_HSV = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+            # self.mask = cv2.inRange(frame_HSV, self.yellow_low, self.yellow_up)
 
             # Destination circle after mask not to mess with the colors
             self.image = cv2.circle(
                 cv_image, self.destCoordinates, self.radius, color, thickness)  # Storing the image
+            self.image = cv2.circle(
+                cv_image, self.yawCoordinates, self.radius, red, thickness)  # Storing the image
+            self.showImage(cv_image)
 
-            # self.showMask(self.mask)
+            # # Contours
+            # _, self.contours, _ = cv2.findContours(
+            #     self.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            # c = max(self.contours, key=cv2.contourArea)
 
-            # Contours
-            _, self.contours, _ = cv2.findContours(
-                self.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            c = max(self.contours, key=cv2.contourArea)
+            # (x, y), radius = cv2.minEnclosingCircle(c)
 
-            (x, y), radius = cv2.minEnclosingCircle(c)
+            # if self.previous_x != None:
+            #     p1 = (x-CLOSENESS_THRESHOLD) <= self.previous_x <= (x +
+            #                                                         CLOSENESS_THRESHOLD)
+            #     p2 = (y-CLOSENESS_THRESHOLD) <= self.previous_y <= (y +
+            #                                                         CLOSENESS_THRESHOLD)
+            #     if p1 and p2:
+            #         self.previous_x, self.previous_y = x, y
+            #     else:
+            #         max_p = (0, 0, 0)
+            #         max_area = 0
+            #         for cont in self.contours:
+            #             (x1, y1), r1 = cv2.minEnclosingCircle(cont)
+            #             area = r1*pi**2
+            #             p1 = (
+            #                 x1-CLOSENESS_THRESHOLD) <= self.previous_x <= (x1+CLOSENESS_THRESHOLD)
+            #             p2 = (
+            #                 y1-CLOSENESS_THRESHOLD) <= self.previous_y <= (y1+CLOSENESS_THRESHOLD)
+            #             p3 = x1 != x
+            #             p4 = y1 != y
+            #             if area > max_area and p1 and p2 and p3:
+            #                 max_p = x1, y1, r1
+            #                 max_area = area
+            #         if max_p != (0, 0, 0):
+            #             print(max_p)
+            #             x, y, radius = max_p
+            #             self.previous_x, self.previous_y = x, y
+            # else:
+            #     c = max(self.contours, key=cv2.contourArea)
+            #     (x, y), radius = cv2.minEnclosingCircle(c)
+            #     self.previous_x, self.previous_y = x, y
+            # center = (int(x), int(y))
+            # radius = int(radius)
 
-            if self.previous_x != None:
-                p1 = (x-CLOSENESS_THRESHOLD) <= self.previous_x <= (x +
-                                                                    CLOSENESS_THRESHOLD)
-                p2 = (y-CLOSENESS_THRESHOLD) <= self.previous_y <= (y +
-                                                                    CLOSENESS_THRESHOLD)
-                if p1 and p2:
-                    self.previous_x, self.previous_y = x, y
-                else:
-                    max_p = (0, 0, 0)
-                    max_area = 0
-                    for cont in self.contours:
-                        (x1, y1), r1 = cv2.minEnclosingCircle(cont)
-                        area = r1*pi**2
-                        p1 = (
-                            x1-CLOSENESS_THRESHOLD) <= self.previous_x <= (x1+CLOSENESS_THRESHOLD)
-                        p2 = (
-                            y1-CLOSENESS_THRESHOLD) <= self.previous_y <= (y1+CLOSENESS_THRESHOLD)
-                        p3 = x1 != x
-                        p4 = y1 != y
-                        if area > max_area and p1 and p2 and p3:
-                            max_p = x1, y1, r1
-                            max_area = area
-                    if max_p != (0, 0, 0):
-                        print(max_p)
-                        x, y, radius = max_p
-                        self.previous_x, self.previous_y = x, y
-            else:
-                c = max(self.contours, key=cv2.contourArea)
-                (x, y), radius = cv2.minEnclosingCircle(c)
-                self.previous_x, self.previous_y = x, y
-            center = (int(x), int(y))
-            radius = int(radius)
+            # self.error[0] = (100*(self.destCoordinates[0] -
+            #                       center[0]))/self.destCoordinates[0]
+            # self.error[1] = (100*(self.radius - radius)) / \
+            #     int(float(self.radius)*RADIUS_FACTOR)
+            # self.error[2] = (100*(self.destCoordinates[1] -
+            #                       center[1]))/self.destCoordinates[1]
 
-            self.error[0] = (100*(self.destCoordinates[0] -
-                                  center[0]))/self.destCoordinates[0]
-            self.error[1] = (100*(self.radius - radius)) / \
-                int(float(self.radius)*RADIUS_FACTOR)
-            self.error[2] = (100*(self.destCoordinates[1] -
-                                  center[1]))/self.destCoordinates[1]
-
-            cv2.circle(cv_image, center, radius, (255, 0, 0), thickness)
-            cv2.drawContours(cv_image, self.contours[0], -1, (0, 255, 0), 3)
-            self.showContours(cv_image)
-            self.x, self.y, self.r = center[0], center[1], radius
+            # cv2.circle(cv_image, center, radius, (255, 0, 0), thickness)
+            # cv2.drawContours(cv_image, self.contours[0], -1, (0, 255, 0), 3)
+            # self.showContours(cv_image)
+            # self.x, self.y, self.r = center[0], center[1], radius
         except CvBridgeError as e:
             print(e)
         except:
