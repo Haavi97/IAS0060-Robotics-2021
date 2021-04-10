@@ -25,15 +25,15 @@
 	launch-prefix="bash -c 'sleep $(arg node_start_delay); $0 $@' " /> -->
 
 	
-	
+<!-- 	
     <arg name = "bag_directory" default="$(find tut_arrows)/bags/" />
     <arg name = "filename" default="pinger.bag" />
 
     <node pkg="rosbag" type="record" 
 	name="recorder" output="screen" 
-	args="-O $(arg bag_directory)$(arg filename) /yaw_error /surge_error /heave_error /pyaw_error /psurge_error /pdepth_error /ucat0/sim_odom /ucat0/hw/beaconReceiver --duration=90"/>
-
-	<!-- <node name="MovingObject" pkg="uwsim" type="spawnObject" output="screen" respawn="true">
-	</node> -->
+	args="-O $(arg bag_directory)$(arg filename) /yaw_error /surge_error /heave_error /pyaw_error /psurge_error /pdepth_error /ucat0/sim_odom /ucat0/hw/beaconReceiver - -duration=90"/>
+-->
+	<node name="MovingObject" pkg="uwsim" type="spawnObject" output="screen" respawn="true">
+	</node>
 	
 </launch>

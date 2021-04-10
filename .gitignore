@@ -9,3 +9,5 @@ src/underwater_simulation/
 .catkin_tools/
 src/vision_opencv/
 src/vision_opencv/
+src/ucat_simulator/ucat_simulator-master/tut_arrows/scripts/fuzzyController.pyc
+src/ucat_simulator/ucat_simulator-master/tut_arrows/bags/errors.bag
