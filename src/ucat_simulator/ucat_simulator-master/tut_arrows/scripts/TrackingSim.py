@@ -238,9 +238,9 @@ class CameraBasedControl:
             midpoint_x = x + w / 2
             midpoint_y = y + h / 2
 
-            midpoint_x += random.randint(-15, 15)
-            midpoint_y += random.randint(-15, 15)
-            radius += random.randint(-10, 10)
+            midpoint_x += int(random.gauss(0, 5))
+            midpoint_y += int(random.gauss(0, 5))
+            radius += int(random.gauss(0, 3))
 
             if radius <= 0:
                 radius = 1
