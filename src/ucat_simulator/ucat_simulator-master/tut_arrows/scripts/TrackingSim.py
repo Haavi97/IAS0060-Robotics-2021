@@ -6,20 +6,21 @@
           +33 6 62 55 45 04
 """
 
-import matplotlib
-import matplotlib.pyplot as plt
+import random
+from math import pi, sqrt
 
 import rospy
 
-import random
+import matplotlib
+import matplotlib.pyplot as plt
 
 import numpy as np
 from timeit import default_timer as timer
 
 
-import cv2    # This imports openCV library 
+import cv2    # This imports openCV library
 import datetime
-from cv_bridge import CvBridge, CvBridgeError # This imports CvBridge
+from cv_bridge import CvBridge, CvBridgeError  # This imports CvBridge
 
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import WrenchStamped, Pose, Vector3Stamped, Twist, Point, Vector3
@@ -31,35 +32,50 @@ from std_msgs.msg import String
 from fuzzyController import FuzzyLogicController
 
 
-
 class KalmanFilter:
 
-    def __init__(self, x0, a, b, r, p0, q):
-        self.x_list = [x0]
-        #self.a = a
-        #self.b = b
-        self.r = r
-        self.p_list = [p0]
-        self.q = q
+    def __init__(self, X0, R, P0, Q, H=None, A=None, B=None, dim=3):
+        self.Xt_1 = X0
+        # A, B == None is model free
+        if A == None:
+            self.A = np.eye(dim)
+        else:
+            self.A = A
+        if B == None:
+            self.B = np.zeros(dim)
+        else:
+            self.B = B
+        # Python 2 -_-
+        # self.A = np.eye(dim) if A == None else self.A = A
+        # self.B = np.zeros(dim) if B == None else self.B = B
 
-    def estimate(self, z, u):
+        if H.any() == None:
+            self.H = np.eye(dim)
+        else:
+            self.H = H
+        self.Htr = np.transpose(self.H)
+        self.R = R
+        self.Pt_1 = P0
+        self.Q = Q
+
+    def estimate(self, Z, U):
         """
-        z - [xt, yt, rt]
+        Z - [xt, yt, rt, pt]
         """
-        kg = float(self.p_list[-1]) / float((self.p_list[-1] + self.r))
+        # Prediction
+        Xt = np.matmul(self.A, self.Xt_1) + self.B*U
+        Pt = np.matmul(np.matmul(self.A, self.Pt_1),
+                       np.transpose(self.A)) + self.Q
 
-        x = self.x_list[-1][0] + kg * (z[0] - self.x_list[-1][0])
-        y = self.x_list[-1][1] + kg * (z[1] - self.x_list[-1][1])
-        r = self.x_list[-1][2] + kg * (z[2] - self.x_list[-1][2])
+        # Correction
+        KG = np.matmul(np.matmul(Pt,self.Htr), np.linalg.inv(np.matmul(np.matmul(self.H,Pt),self.Htr) + self.R))
+        Xt = Xt + np.matmul(KG,(Z - np.matmul(self.H,Xt)))
+        Pt = (1 - np.matmul(np.matmul(KG,self.H),Pt))
+        
+        self.Xt_1 = Xt
+        self.Pt_1 = Pt
 
-        xt = [x, y, r]
-
-        self.x_list.append(xt)
-
-        self.p_list.append((1-kg)*self.p_list[-1] + self.q)
-
-        return xt
-
+        return Xt
 
 
 class CameraBasedControl:
@@ -77,42 +93,59 @@ class CameraBasedControl:
     universeOfDiscourseROutput = [-8, 0, 8]
 
     # Rules Table                neg |      zero  |    pos   |       Distance / Traffic light
-    rulesTable = np.array([ [  'pos'   , 'stop'  ,  'neg' ], # negative velocity
-			[   'pos'   , 'stop'  ,  'neg' ], # zero velocity
-			[   'pos'   , 'stop'  ,  'neg' ]] # positive velocity
-			) 
+    rulesTable = np.array([['pos', 'stop',  'neg'],  # negative velocity
+                           ['pos', 'stop',  'neg'],  # zero velocity
+                           ['pos', 'stop',  'neg']]  # positive velocity
+                          )
 
     x_controller = FuzzyLogicController(universeOfDiscourseX, universeOfDiscourseXDeriv,
-				    universeOfDiscourseXOutput, rulesTable)
+                                        universeOfDiscourseXOutput, rulesTable)
     y_controller = FuzzyLogicController(universeOfDiscourseY, universeOfDiscourseYDeriv,
-				    universeOfDiscourseYOutput, rulesTable)
+                                        universeOfDiscourseYOutput, rulesTable)
     r_controller = FuzzyLogicController(universeOfDiscourseR, universeOfDiscourseRDeriv,
-				    universeOfDiscourseROutput, rulesTable)
+                                        universeOfDiscourseROutput, rulesTable)
 
-    def __init__(self, dt):       
+    def __init__(self, dt):
 
         self.dt = dt        # Sampling time
 
-        self.camera_sub = rospy.Subscriber("/ucat0/camera/image", Image, self.onCamera) # Subscriber to images topic
-        self.bridge = CvBridge()    # CvBridge will be used to convert the image into a usable format for openCV
-        self.image = None # This is where the image will be stored
-        self.show = 1 # Variable used to chose if user wants to display the images or not (1 for yes)
+        self.camera_sub = rospy.Subscriber(
+            "/ucat0/camera/image", Image, self.onCamera)  # Subscriber to images topic
+        # CvBridge will be used to convert the image into a usable format for openCV
+        self.bridge = CvBridge()
+        self.image = None  # This is where the image will be stored
+        # Variable used to chose if user wants to display the images or not (1 for yes)
+        self.show = 1
 
-        self.error = np.array([0, 0, 0]) # Tracking error at time t
-        self.lastError = np.array([0, 0, 0]) # Tracking error at time t-1
+        self.error = np.array([0, 0, 0])  # Tracking error at time t
+        self.lastError = np.array([0, 0, 0])  # Tracking error at time t-1
         self.depthTrackingError = 0
         self.lastDepthError = 0
         self.iterations = 0
         self.depthErrors = []
 
-        self.kalman_filter = KalmanFilter([320, 240, 50], 0, 0, 50, 0, 5)
-        
+        X0 = np.array([320, 240, 50])
+        l = 0
+        P0 = l*np.eye(3)
+        r = 50
+        R = np.eye(4)
+        # With this we are setting the variance of the pinger yaw noise to half the other observations
+        R[3][3] = r/2 
+        q = 5
+        Q = q*np.eye(3)
+        H = np.array([[1., 0., 0.],
+                      [0., 1., 0.],
+                      [0., 0., 1.],
+                      [1., 0., 0.]])
+
+        self.kalman_filter = KalmanFilter(X0, R, P0, Q, H=H)
+
         self.lastRadiusError = 0
         self.lastMidpointXError = 0
         self.lastMidpointYError = 0
 
         self.last_plot_point_time = datetime.datetime.now()
-        self.last_plot_point_diff = 500 # milliseconds
+        self.last_plot_point_diff = 500  # milliseconds
 
         self.cat_points_x = []
         self.cat_points_y = []
@@ -129,100 +162,122 @@ class CameraBasedControl:
         self.obj_points_x = []
         self.obj_points_y = []
         self.obj_points_z = []
-        
+
         self.radius = 0
         self.targetRadius = 60
-        
+
         self.radiusErrors = []
         self.midpointXErrors = []
         self.midpointYErrors = []
 
-        self.U = np.zeros(6) # Force and Torque to be applied
-        
-        self.wrench_msg = WrenchStamped() # Force and torque message
-        self.wrench_pub = rospy.Publisher("force_req", WrenchStamped, queue_size=10) # Force and torque publisher
-	
-        self.mode = FlippersModeCmd() # Mode selection
-        self.mode.mode = "SLOW" # Fins configuration ("FAST", "SLOW")
-        self.wrench_mode_pub = rospy.Publisher("force_mode", FlippersModeCmd, queue_size=25) # Mode selection publisher
+        self.U = np.zeros(6)  # Force and Torque to be applied
+
+        self.wrench_msg = WrenchStamped()  # Force and torque message
+        self.wrench_pub = rospy.Publisher(
+            "force_req", WrenchStamped, queue_size=10)  # Force and torque publisher
+
+        self.mode = FlippersModeCmd()  # Mode selection
+        self.mode.mode = "SLOW"  # Fins configuration ("FAST", "SLOW")
+        self.wrench_mode_pub = rospy.Publisher(
+            "force_mode", FlippersModeCmd, queue_size=25)  # Mode selection publisher
 
         self.rpy_sub = rospy.Subscriber("rpy", Vector3, self.imuCallback)
-        self.pressure_sub = rospy.Subscriber('/ucat0/hw/pressure', FluidPressure, self.depthCallback)
-        self.obj_sub = rospy.Subscriber('/marker0/point', Point, self.trackerCallBack)
-        self.cat_sub = rospy.Subscriber('/ucat0/sim_odom', Odometry, self.catCallback)
+        self.pressure_sub = rospy.Subscriber(
+            '/ucat0/hw/pressure', FluidPressure, self.depthCallback)
+        self.obj_sub = rospy.Subscriber(
+            '/marker0/point', Point, self.trackerCallBack)
+        self.cat_sub = rospy.Subscriber(
+            '/ucat0/sim_odom', Odometry, self.catCallback)
+        self.relyaw_sub = rospy.Subscriber(
+            '/ucat0/hw/beaconReceiver', BeaconPing, self.beaconCallback)
 
-        self.depth = 5 # depth of robot
-        self.roll = 0 # roll angle of robot
-        self.pitch = 0 # pitch angle of robot
-        self.yaw = 0 # yaw angle of robot
+        self.depth = 5  # depth of robot
+        self.roll = 0  # roll angle of robot
+        self.pitch = 0  # pitch angle of robot
+        self.yaw = 0  # yaw angle of robot
+
+        # Size of the camera view. Initial orientative values
+        self.h, self.w = 680, 340
+
+        # Relative yaw from the pinger. This value should be already tranlated into pixels
+        self.relYaw = 0
 
         self.depth = 0
 
         self.plot_shown = False
         self.full_zero_steps = 0
-    
+
     # callback function of imu topic subscriber
     def imuCallback(self, imu_msg):
         self.roll = imu_msg.x
         self.pitch = imu_msg.y
         self.yaw = imu_msg.z
 
+    def beaconCallback(self, data):
+        self.relYaw = self.radToPixels(data.relyaw)
+
+    def radToPixels(self, yaw):
+        # Maximum is set to pi/4 so 45 degrees at the moment
+        return (self.w/2)*yaw*4/pi
+
     def showImage(self, image):
-        if(image.any() != None and self.show): # Make sure image is not empty and user want to display the image
-	        cv2.imshow('U-CAT CAMERA',image) # This displays the image in a new window
-        if cv2.waitKey(1) & 0xFF == ord('q'): # If user presses "q" on keyboard, stop displaying the images
+        # Make sure image is not empty and user want to display the image
+        if(image.any() != None and self.show):
+            # This displays the image in a new window
+            cv2.imshow('U-CAT CAMERA', image)
+        # If user presses "q" on keyboard, stop displaying the images
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             self.show = 0
-            cv2.destroyAllWindows() # This closes all openCV windows
+            cv2.destroyAllWindows()  # This closes all openCV windows
 
     def simpleRedApproach(self, cv_image):
-        # ...
+        # blurred = cv2.GaussianBlur(image, (11, 11), 0)
+        img_hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
-    	# blurred = cv2.GaussianBlur(image, (11, 11), 0)
-    	img_hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+        # lower mask
+        lower_red = np.array([0, 20, 20])
+        upper_red = np.array([60, 255, 255])
+        mask = cv2.inRange(img_hsv, lower_red, upper_red)
 
-    	# lower mask
-    	lower_red = np.array([0,20,20])
-    	upper_red = np.array([60,255,255])
-    	mask = cv2.inRange(img_hsv, lower_red, upper_red)
+        # upper mask
+        #lower_red = np.array([160,20,20])
+        #upper_red = np.array([180,255,255])
+        #mask2 = cv2.inRange(img_hsv, lower_red, upper_red)
 
-    	# upper mask
-    	#lower_red = np.array([160,20,20])
-    	#upper_red = np.array([180,255,255])
-    	#mask2 = cv2.inRange(img_hsv, lower_red, upper_red)
-
-    	#mask = mask1 + mask2
+        #mask = mask1 + mask2
 
         # Erode the mask and then dilate it to remove some noise.
-    	#mask = cv2.erode(mask, None, iterations=2)
-    	#mask = cv2.dilate(mask, None, iterations=2)
+        #mask = cv2.erode(mask, None, iterations=2)
+        #mask = cv2.dilate(mask, None, iterations=2)
 
-    	output_img = cv2.bitwise_and(img_hsv, img_hsv, mask=mask)
+        output_img = cv2.bitwise_and(img_hsv, img_hsv, mask=mask)
 
         grayscale = cv2.cvtColor(output_img, cv2.COLOR_BGR2GRAY)
 
-    	image_2, contours, hierarchy = cv2.findContours(grayscale,cv2.RETR_LIST, \
-                                   cv2.CHAIN_APPROX_SIMPLE)
+        _, contours, _ = cv2.findContours(grayscale, cv2.RETR_LIST,
+                                          cv2.CHAIN_APPROX_SIMPLE)
 
-    	# Find object with the biggest bounding box
-    	mx = (0,0,0,0)      # biggest bounding box so far
-    	mx_area = 0
-    	for cont in contours:
-    	    x,y,w,h = cv2.boundingRect(cont)
-    	    area = w*h
-    	    if area > mx_area:
-    	        mx = x,y,w,h
-    	        mx_area = area
-    	x,y,w,h = mx
-    	
+        # Find object with the biggest bounding box
+        mx = (0, 0, 0, 0)      # biggest bounding box so far
+        mx_area = 0
+        for cont in contours:
+            x, y, w, h = cv2.boundingRect(cont)
+            area = w*h
+            if area > mx_area:
+                mx = x, y, w, h
+                mx_area = area
+        x, y, w, h = mx
+
         return x, y, w, h
-
 
     def onCamera(self, image):
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8") # converting the image into bgr format
-            self.image = cv_image # Storing the image
-    	     # Calling function to display the image
-	        #start = timer()
+            # converting the image into bgr format
+            cv_image = self.bridge.imgmsg_to_cv2(image, "bgr8")
+            self.image = cv_image  # Storing the image
+            (self.h, self.w) = cv_image.shape[:2]
+            # Calling function to display the image
+            #start = timer()
 
             img_height = cv_image.shape[0]
             img_width = cv_image.shape[1]
@@ -234,7 +289,7 @@ class CameraBasedControl:
 
             x, y, w, h = self.simpleRedApproach(cv_image)
 
-            radius = (w + h) / 4 # Average the width and height
+            radius = (w + h) / 4  # Average the width and height
             midpoint_x = x + w / 2
             midpoint_y = y + h / 2
 
@@ -245,17 +300,23 @@ class CameraBasedControl:
             if radius <= 0:
                 radius = 1
 
-            est_x, est_y, est_r = self.kalman_filter.estimate([midpoint_x, midpoint_y, radius], 0)
-            
+            Z = np.array([midpoint_x, midpoint_y, radius, self.relYaw])
+            U = np.zeros(3)  # Model free
+
+
+            est_x, est_y, est_r = self.kalman_filter.estimate(Z, U)
+
             if radius < 1:
                 error_radius = 0
                 error_midpoint_x = 0
                 error_midpoint_y = 0
             else:
                 if target_radius < 0:
-                    error_radius = max(-1, (target_radius - radius) / float(self.targetRadius))
+                    error_radius = max(-1, (target_radius -
+                                            radius) / float(self.targetRadius))
                 else:
-                    error_radius = min(1, (target_radius - radius) / float(self.targetRadius))
+                    error_radius = min(
+                        1, (target_radius - radius) / float(self.targetRadius))
                     error_midpoint_x = (target_midpoint_x - midpoint_x) / 240.0
                     error_midpoint_y = (target_midpoint_y - midpoint_y) / 180.0
 
@@ -267,9 +328,11 @@ class CameraBasedControl:
                 est_y = 0
             elif use_estimates:
                 if est_r < 0:
-                    error_radius = max(-1, (target_radius - est_r) / float(self.targetRadius))
+                    error_radius = max(-1, (target_radius -
+                                            est_r) / float(self.targetRadius))
                 else:
-                    error_radius = min(1, (target_radius - est_r) / float(self.targetRadius))
+                    error_radius = min(
+                        1, (target_radius - est_r) / float(self.targetRadius))
                     error_midpoint_x = (target_midpoint_x - est_x) / 240.0
                     error_midpoint_y = (target_midpoint_y - est_y) / 180.0
 
@@ -294,24 +357,24 @@ class CameraBasedControl:
                 self.wrench_mode_pub.publish(new_mode)
                 self.mode.mode = "FAST"
 
-
-            cv2.circle(cv_image, (midpoint_x, midpoint_y), radius, (0, 0, 155), 2)
+            cv2.circle(cv_image, (midpoint_x, midpoint_y),
+                       radius, (0, 0, 155), 2)
 
             # target circle
-            cv2.circle(cv_image, (int(est_x), int(est_y)), int(est_r), (50, 155, 0), 5)
-            cv2.circle(cv_image, (target_midpoint_x, target_midpoint_y), target_radius, (155, 0, 0), 2)
+            cv2.circle(cv_image, (int(est_x), int(est_y)),
+                       int(est_r), (50, 155, 0), 5)
+            cv2.circle(cv_image, (target_midpoint_x, target_midpoint_y),
+                       target_radius, (155, 0, 0), 2)
 
-
-    	    #cv2.rectangle(cv_image,(x,y),(x+w,y+h),(0,0,155),1)
+            # cv2.rectangle(cv_image,(x,y),(x+w,y+h),(0,0,155),1)
 
             self.showImage(cv_image)
 
         except CvBridgeError as e:
-	        print(e)
+            print(e)
 
     def depthCallback(self, depth_msg):
         self.depth = (depth_msg.fluid_pressure - 101325) / (1000 * 9.81)
-
 
     def run(self):
         while not rospy.is_shutdown():
@@ -334,8 +397,8 @@ class CameraBasedControl:
             self.cat_errors_x.append(self.lastMidpointXError)
             self.cat_errors_y.append(self.lastMidpointYError)
             self.cat_errors_z.append(self.lastRadiusError)
-            
-            self.last_plot_point_time = datetime.datetime.now()        
+
+            self.last_plot_point_time = datetime.datetime.now()
 
     def catCallback(self, data):
         self.curr_abs_x = data.pose.pose.position.x
@@ -347,11 +410,11 @@ class CameraBasedControl:
         e1 = self.error
         e2 = (self.error - self.lastError) / self.dt
         self.lastError = self.error
-	
+
         desiredDepth = 10
 
         self.depthTrackingError = self.depth - desiredDepth
-        
+
         kp = 0
         kd = 0
 
@@ -362,27 +425,29 @@ class CameraBasedControl:
         kd_depth = 0
         kd_depth = 0
 
-        kp_surge = 100 #0.03 * self.targetRadius * 2 #0.002
-        kd_surge = 0 # 0 * 20#-0.0005
+        kp_surge = 100  # 0.03 * self.targetRadius * 2 #0.002
+        kd_surge = 0  # 0 * 20#-0.0005
 
         # Forces to apply : U = [surge, sway, heave, roll, pitch, yaw]
-        #===================================================================
+        # ===================================================================
 
         scale_factor = 1
         if self.lastRadiusError != 0 or self.lastMidpointYError != 0 or self.lastMidpointXError != 0:
-                scale_factor = self.lastRadiusError  # maximum 1, gets lower with a lower radius_error
-                scale_factor = scale_factor ** 3
-                scale_factor = max(0.02, scale_factor)
+            # maximum 1, gets lower with a lower radius_error
+            scale_factor = self.lastRadiusError
+            scale_factor = scale_factor ** 3
+            scale_factor = max(0.02, scale_factor)
 
-        x_deriv = 0 if len(self.midpointXErrors) < 2 else self.midpointXErrors[-1] - self.midpointXErrors[-2]
+        x_deriv = 0 if len(
+            self.midpointXErrors) < 2 else self.midpointXErrors[-1] - self.midpointXErrors[-2]
         yawU = self.x_controller.control(self.lastMidpointXError, x_deriv)
 
-
-        y_deriv = 0 if len(self.midpointYErrors) < 2 else self.midpointYErrors[-1] - self.midpointYErrors[-2]
+        y_deriv = 0 if len(
+            self.midpointYErrors) < 2 else self.midpointYErrors[-1] - self.midpointYErrors[-2]
         depthU = self.y_controller.control(self.lastMidpointYError, y_deriv)
 
-
-        r_deriv = 0 if len(self.radiusErrors) < 2 else self.radiusErrors[-1] - self.radiusErrors[-2]
+        r_deriv = 0 if len(
+            self.radiusErrors) < 2 else self.radiusErrors[-1] - self.radiusErrors[-2]
         surgeU = self.y_controller.control(self.lastRadiusError, r_deriv)
 
         m = max(abs(yawU), abs(depthU), abs(surgeU))
@@ -406,50 +471,53 @@ class CameraBasedControl:
             # Move back if the robot's lost track of the ball
             surgeU = -4
 
-        self.U = [surgeU,0,depthU,0,0,yawU]
-        #===================================================================
+        self.U = [surgeU, 0, depthU, 0, 0, yawU]
+        # ===================================================================
 
         self.lastDepthError = self.depthTrackingError
-	
-        # Publishing forces to wrench_driver    
+
+        # Publishing forces to wrench_driver
         self.wrench_msg.header.stamp = rospy.Time.now()
-        self.wrench_msg.wrench.force.x = self.U[0] 
+        self.wrench_msg.wrench.force.x = self.U[0]
         self.wrench_msg.wrench.force.y = self.U[1]
         self.wrench_msg.wrench.force.z = self.U[2]
         self.wrench_msg.wrench.torque.x = self.U[3]
         self.wrench_msg.wrench.torque.y = self.U[4]
         self.wrench_msg.wrench.torque.z = self.U[5]
-            
-        self.wrench_pub.publish(self.wrench_msg) # Publishing force vector to fins wrench driver
+
+        # Publishing force vector to fins wrench driver
+        self.wrench_pub.publish(self.wrench_msg)
 
         plt.figure("U-CAT movement")
         plt.clf()
-        plt.axis((2,9,7,14))
-        
-        plt.scatter(self.cat_points_x[-50::], self.cat_points_y[-50::], color=['blue'])
-        plt.scatter(self.obj_points_x[-50::], self.obj_points_y[-50::], color=['red'])
+        plt.axis((2, 9, 7, 14))
+
+        plt.scatter(self.cat_points_x[-50::],
+                    self.cat_points_y[-50::], color=['blue'])
+        plt.scatter(self.obj_points_x[-50::],
+                    self.obj_points_y[-50::], color=['red'])
 
         plt.figure("X Axis movement")
         plt.clf()
-        plt.axis((0,201,-1,1))
+        plt.axis((0, 201, -1, 1))
         short_x = self.midpointXErrors[-200::]
         short_y = self.midpointYErrors[-200::]
         short_z = self.radiusErrors[-200::]
 
         x_axis = list(range(1, min(200, len(short_x)) + 1))
-        
+
         plt.scatter(x_axis, short_x, color=['blue'])
 
         plt.figure("Y Axis movement")
         plt.clf()
 
-        plt.axis((0,201,-1,1))
+        plt.axis((0, 201, -1, 1))
 
         plt.scatter(x_axis, short_y, color=['green'])
         plt.figure("Z Axis movement")
         plt.clf()
 
-        plt.axis((0,201,-1,1))
+        plt.axis((0, 201, -1, 1))
 
         plt.scatter(x_axis, short_z, color=['red'])
 
@@ -458,17 +526,5 @@ class CameraBasedControl:
 
 if __name__ == '__main__':
     rospy.init_node("CameraBasedControl")
-    mbc = CameraBasedControl(0.2) #(dt)
+    mbc = CameraBasedControl(0.2)  # (dt)
     mbc.run()
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
