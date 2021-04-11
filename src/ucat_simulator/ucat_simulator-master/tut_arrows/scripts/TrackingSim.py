@@ -207,6 +207,8 @@ class CameraBasedControl:
         self.plot_shown = False
         self.full_zero_steps = 0
 
+        self.fig, self.axs = plt.subplots(2, 2)
+
     # callback function of imu topic subscriber
     def imuCallback(self, imu_msg):
         self.roll = imu_msg.x
@@ -293,9 +295,9 @@ class CameraBasedControl:
             midpoint_x = x + w / 2
             midpoint_y = y + h / 2
 
-            midpoint_x += int(random.gauss(0, 5))
-            midpoint_y += int(random.gauss(0, 5))
-            radius += int(random.gauss(0, 3))
+            # midpoint_x += int(random.gauss(0, 5))
+            # midpoint_y += int(random.gauss(0, 5))
+            # radius += int(random.gauss(0, 3))
 
             if radius <= 0:
                 radius = 1
@@ -360,9 +362,10 @@ class CameraBasedControl:
             cv2.circle(cv_image, (midpoint_x, midpoint_y),
                        radius, (0, 0, 155), 2)
 
-            # target circle
+            # Estimate circle
             cv2.circle(cv_image, (int(est_x), int(est_y)),
                        int(est_r), (50, 155, 0), 5)
+            # target circle
             cv2.circle(cv_image, (target_midpoint_x, target_midpoint_y),
                        target_radius, (155, 0, 0), 2)
 
@@ -488,38 +491,43 @@ class CameraBasedControl:
         # Publishing force vector to fins wrench driver
         self.wrench_pub.publish(self.wrench_msg)
 
-        plt.figure("U-CAT movement")
-        plt.clf()
-        plt.axis((2, 9, 7, 14))
+        self.axs[0, 0].clear()
+        self.axs[1, 0].clear()
+        self.axs[0, 1].clear()
+        self.axs[1, 1].clear()
 
-        plt.scatter(self.cat_points_x[-50::],
+        self.axs[0, 0].set_title("U-CAT movement")
+
+        self.axs[0, 0].axis((2, 9, 7, 14))
+
+        self.axs[0, 0].scatter(self.cat_points_x[-50::],
                     self.cat_points_y[-50::], color=['blue'])
-        plt.scatter(self.obj_points_x[-50::],
+        self.axs[0, 0].scatter(self.obj_points_x[-50::],
                     self.obj_points_y[-50::], color=['red'])
 
-        plt.figure("X Axis movement")
-        plt.clf()
-        plt.axis((0, 201, -1, 1))
+        self.axs[0, 1].set_title("X Axis movement")
+        self.axs[0, 1].axis((0, 201, -1, 1))
         short_x = self.midpointXErrors[-200::]
         short_y = self.midpointYErrors[-200::]
         short_z = self.radiusErrors[-200::]
 
         x_axis = list(range(1, min(200, len(short_x)) + 1))
 
-        plt.scatter(x_axis, short_x, color=['blue'])
+        self.axs[0, 1].scatter(x_axis, short_x, color=['blue'])
 
-        plt.figure("Y Axis movement")
-        plt.clf()
+        self.axs[1, 0].set_title("Y Axis movement")
 
-        plt.axis((0, 201, -1, 1))
+        self.axs[1, 0].axis((0, 201, -1, 1))
 
-        plt.scatter(x_axis, short_y, color=['green'])
-        plt.figure("Z Axis movement")
-        plt.clf()
+        self.axs[1, 0].scatter(x_axis, short_y, color=['green'])
 
-        plt.axis((0, 201, -1, 1))
+        self.axs[1, 1].set_title("Z Axis movement")
 
-        plt.scatter(x_axis, short_z, color=['red'])
+        self.axs[1, 1].axis((0, 201, -1, 1))
+
+        self.axs[1, 1].scatter(x_axis, short_z, color=['red'])
+
+        plt.draw()
 
         plt.pause(0.1)
 
