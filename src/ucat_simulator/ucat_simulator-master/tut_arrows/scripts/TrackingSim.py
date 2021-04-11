@@ -170,6 +170,11 @@ class CameraBasedControl:
         self.midpointXErrors = []
         self.midpointYErrors = []
 
+        self.midpointX = []
+        self.relYawList = []
+
+        self.relYawRadList = []
+
         self.U = np.zeros(6)  # Force and Torque to be applied
 
         self.wrench_msg = WrenchStamped()  # Force and torque message
@@ -201,13 +206,14 @@ class CameraBasedControl:
 
         # Relative yaw from the pinger. This value should be already tranlated into pixels
         self.relYaw = 0
+        self.relYawRads = 0
 
         self.depth = 0
 
         self.plot_shown = False
         self.full_zero_steps = 0
 
-        self.fig, self.axs = plt.subplots(2, 2)
+        self.fig, self.axs = plt.subplots(2, 3)
 
     # callback function of imu topic subscriber
     def imuCallback(self, imu_msg):
@@ -216,11 +222,12 @@ class CameraBasedControl:
         self.yaw = imu_msg.z
 
     def beaconCallback(self, data):
+        self.relYawRads = data.relyaw
         self.relYaw = self.radToPixels(data.relyaw)
 
     def radToPixels(self, yaw):
         # Maximum is set to pi/4 so 45 degrees at the moment
-        return (self.w/2)*yaw*4/pi
+        return self.w/2 + (self.w/2)*(yaw)*4/pi
 
     def showImage(self, image):
         # Make sure image is not empty and user want to display the image
@@ -306,6 +313,8 @@ class CameraBasedControl:
             U = np.zeros(3)  # Model free
 
 
+
+
             est_x, est_y, est_r = self.kalman_filter.estimate(Z, U)
 
             if radius < 1:
@@ -347,6 +356,11 @@ class CameraBasedControl:
             self.radiusErrors.append(error_radius)
             self.midpointXErrors.append(error_midpoint_x)
             self.midpointYErrors.append(error_midpoint_y)
+
+            self.midpointX.append(midpoint_x)
+            self.relYawList.append(self.relYaw)
+
+            self.relYawRadList.append(self.relYawRads)
 
             if abs(error_radius) < 0.45 and self.mode.mode == "FAST":
                 new_mode = FlippersModeCmd()
@@ -495,6 +509,8 @@ class CameraBasedControl:
         self.axs[1, 0].clear()
         self.axs[0, 1].clear()
         self.axs[1, 1].clear()
+        self.axs[0, 2].clear()
+        self.axs[1, 2].clear()
 
         self.axs[0, 0].set_title("U-CAT movement")
 
@@ -510,6 +526,17 @@ class CameraBasedControl:
         short_x = self.midpointXErrors[-200::]
         short_y = self.midpointYErrors[-200::]
         short_z = self.radiusErrors[-200::]
+
+        short_xp = self.midpointX[-200::]
+        short_ry = self.relYawList[-200::]
+        try:
+            max_xp_ry = max(max(short_xp), max(short_ry))
+            min_xp_ry = min(min(short_xp), min(short_ry))
+        except:
+            max_xp_ry = 300
+            min_xp_ry = -300
+        
+        short_ryrads = self.relYawRadList[-200::]
 
         x_axis = list(range(1, min(200, len(short_x)) + 1))
 
@@ -527,7 +554,34 @@ class CameraBasedControl:
 
         self.axs[1, 1].scatter(x_axis, short_z, color=['red'])
 
+        self.axs[0, 2].set_title("X Position (middle point and relative yaw)")
+        self.axs[0, 2].axis((0, 201, max_xp_ry + 10, min_xp_ry -10))
+
+        self.axs[0, 2].scatter(x_axis, short_xp, color=['green'], label="Camera measurement")
+        self.axs[0, 2].scatter(x_axis, short_ry, color=['blue'], label="Pinger measurement")
+
+        self.axs[0, 2].legend()
+
+        self.axs[1, 2].set_title("Relative yaw in radians")
+        try:
+            max_rlr = max(short_ryrads)
+            min_rlr = min(short_ryrads)
+        except:
+            max_rlr = 0
+            min_rlr = 0
+        self.axs[1, 2].axis((0, 201, max_rlr + 10, min_rlr -10))
+
+        self.axs[1, 2].scatter(x_axis, short_ryrads, color=['black'])
+
         plt.draw()
+
+        # Freeing memory
+        self.midpointXErrors = self.midpointXErrors[-200::]
+        self.midpointYErrors = self.midpointYErrors[-200::]
+        self.radiusErrors = self.radiusErrors[-200::]
+        self.midpointX = self.midpointX[-200::]
+        self.relYawList = self.relYawList[-200::]
+        self.relYawRadList = self.relYawRadList[-200::]
 
         plt.pause(0.1)
 
