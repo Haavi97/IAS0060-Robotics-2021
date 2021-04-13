@@ -586,7 +586,7 @@ class CameraBasedControl:
 
         self.axs[1, 2].axis((0, 201, max_ry, min_ry))
 
-        self.axs[1, 2].scatter(x_axis, short_ryrads, color=['black'])
+        self.axs[1, 2].plot(x_axis, short_ryrads, color='black')
 
         plt.draw()
 
