@@ -226,8 +226,8 @@ class CameraBasedControl:
         self.relYaw = self.radToPixels(data.relyaw)
 
     def radToPixels(self, yaw):
-        # Maximum is set to pi/4 so 45 degrees at the moment
-        return self.w/2 + (self.w/2)*(yaw)*4/pi
+        # Maximum is set to pi/6 so 30 degrees at the moment
+        return self.w/2 + (self.w/2)*(yaw)*6/pi
 
     def showImage(self, image):
         # Make sure image is not empty and user want to display the image
@@ -244,14 +244,14 @@ class CameraBasedControl:
         img_hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
         # lower mask
-        lower_red = np.array([0, 20, 20])
-        upper_red = np.array([60, 255, 255])
-        mask = cv2.inRange(img_hsv, lower_red, upper_red)
+        # lower_red = np.array([0, 20, 20])
+        # upper_red = np.array([60, 255, 255])
+        # mask = cv2.inRange(img_hsv, lower_red, upper_red)
 
         # upper mask
-        #lower_red = np.array([160,20,20])
-        #upper_red = np.array([180,255,255])
-        #mask2 = cv2.inRange(img_hsv, lower_red, upper_red)
+        lower_red = np.array([160,20,20])
+        upper_red = np.array([180,255,255])
+        mask = cv2.inRange(img_hsv, lower_red, upper_red)
 
         #mask = mask1 + mask2
 
@@ -421,6 +421,17 @@ class CameraBasedControl:
         self.curr_abs_x = data.pose.pose.position.x
         self.curr_abs_y = data.pose.pose.position.y
         self.curr_abs_z = data.pose.pose.position.z
+        if (datetime.datetime.now() - self.last_plot_point_time).total_seconds() * 1000 > (self.last_plot_point_diff):
+
+            self.cat_points_x.append(self.curr_abs_x)
+            self.cat_points_y.append(self.curr_abs_y)
+            self.cat_points_z.append(self.curr_abs_z)
+
+            self.cat_errors_x.append(self.lastMidpointXError)
+            self.cat_errors_y.append(self.lastMidpointYError)
+            self.cat_errors_z.append(self.lastRadiusError)
+
+            self.last_plot_point_time = datetime.datetime.now()
 
     # Main loop
     def step(self):
@@ -521,7 +532,7 @@ class CameraBasedControl:
         self.axs[0, 0].scatter(self.obj_points_x[-50::],
                     self.obj_points_y[-50::], color=['red'])
 
-        self.axs[0, 1].set_title("X Axis movement")
+        self.axs[0, 1].set_title("X Axis error")
         self.axs[0, 1].axis((0, 201, -1, 1))
         short_x = self.midpointXErrors[-200::]
         short_y = self.midpointYErrors[-200::]
@@ -542,19 +553,19 @@ class CameraBasedControl:
 
         self.axs[0, 1].scatter(x_axis, short_x, color=['blue'])
 
-        self.axs[1, 0].set_title("Y Axis movement")
+        self.axs[1, 0].set_title("Y Axis error ")
 
         self.axs[1, 0].axis((0, 201, -1, 1))
 
         self.axs[1, 0].scatter(x_axis, short_y, color=['green'])
 
-        self.axs[1, 1].set_title("Z Axis movement")
+        self.axs[1, 1].set_title("Z Axis error (radius)")
 
         self.axs[1, 1].axis((0, 201, -1, 1))
 
         self.axs[1, 1].scatter(x_axis, short_z, color=['red'])
 
-        self.axs[0, 2].set_title("X Position (middle point and relative yaw)")
+        self.axs[0, 2].set_title("X Position in pixels (middle point and relative yaw)")
         self.axs[0, 2].axis((0, 201, max_xp_ry + 10, min_xp_ry -10))
 
         self.axs[0, 2].scatter(x_axis, short_xp, color=['green'], label="Camera measurement")
@@ -563,13 +574,8 @@ class CameraBasedControl:
         self.axs[0, 2].legend()
 
         self.axs[1, 2].set_title("Relative yaw in radians")
-        try:
-            max_rlr = max(short_ryrads)
-            min_rlr = min(short_ryrads)
-        except:
-            max_rlr = 0
-            min_rlr = 0
-        self.axs[1, 2].axis((0, 201, max_rlr + 10, min_rlr -10))
+
+        self.axs[1, 2].axis((0, 201, pi, -pi))
 
         self.axs[1, 2].scatter(x_axis, short_ryrads, color=['black'])
 
