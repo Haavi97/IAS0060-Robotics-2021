@@ -205,8 +205,8 @@ class CameraBasedControl:
         self.h, self.w = 680, 340
 
         # Relative yaw from the pinger. This value should be already tranlated into pixels
-        self.relYaw = 0
-        self.relYawRads = 0
+        self.relYaw = None
+        self.relYawRads = None
 
         self.depth = 0
 
@@ -227,7 +227,7 @@ class CameraBasedControl:
 
     def radToPixels(self, yaw):
         # Maximum is set to pi/6 so 30 degrees at the moment
-        return self.w/2 + (self.w/2)*(yaw)*6/pi
+        return self.w/2 + (self.w/2)*(-yaw)*6/pi
 
     def showImage(self, image):
         # Make sure image is not empty and user want to display the image
@@ -308,7 +308,9 @@ class CameraBasedControl:
 
             if radius <= 0:
                 radius = 1
-
+            if self.relYaw == None:
+                self.relYaw = midpoint_x
+                self.relYawRads = (midpoint_x*pi)/(3*self.w) - pi/6
             Z = np.array([midpoint_x, midpoint_y, radius, self.relYaw])
             U = np.zeros(3)  # Model free
 
@@ -568,14 +570,21 @@ class CameraBasedControl:
         self.axs[0, 2].set_title("X Position in pixels (middle point and relative yaw)")
         self.axs[0, 2].axis((0, 201, max_xp_ry + 10, min_xp_ry -10))
 
-        self.axs[0, 2].scatter(x_axis, short_xp, color=['green'], label="Camera measurement")
-        self.axs[0, 2].scatter(x_axis, short_ry, color=['blue'], label="Pinger measurement")
+        self.axs[0, 2].plot(x_axis, short_xp, color='green', label="Camera measurement")
+        self.axs[0, 2].plot(x_axis, short_ry, color='blue', label="Pinger measurement")
 
         self.axs[0, 2].legend()
 
+        try:
+            max_ry = max(short_ryrads) + 0.1
+            min_ry = min(short_ryrads) - 0.1
+        except:
+            max_ry = pi
+            min_ry = -pi
+
         self.axs[1, 2].set_title("Relative yaw in radians")
 
-        self.axs[1, 2].axis((0, 201, pi, -pi))
+        self.axs[1, 2].axis((0, 201, max_ry, min_ry))
 
         self.axs[1, 2].scatter(x_axis, short_ryrads, color=['black'])
 
