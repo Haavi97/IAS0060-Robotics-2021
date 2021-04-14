@@ -127,10 +127,10 @@ class CameraBasedControl:
         X0 = np.array([320, 240, 50])
         l = 0
         P0 = l*np.eye(3)
-        r = 50
-        R = np.eye(4)
+        r = 30
+        R = r*np.eye(4)
         # With this we are setting the variance of the pinger yaw noise to half the other observations
-        R[3][3] = r/2 
+        R[3][3] = 3*r/4
         q = 5
         Q = q*np.eye(3)
         H = np.array([[1., 0., 0.],

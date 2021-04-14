@@ -696,7 +696,7 @@
 		<name>terrain</name>
 		<file>meshes/wreck.ive</file>
 		<position>
-			<x> 0</x>
+			<x> -25 </x>
 			<y> 0 </y>
 			<z> -20 </z>
 		</position>
